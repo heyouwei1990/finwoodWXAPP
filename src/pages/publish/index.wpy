@@ -1,0 +1,832 @@
+<template>
+  <view class="publish-page">
+    <view class="collapse-wrap">
+      <view class="collapse-dl {{!dropDown1?'':'active'}}">
+        <view class="collapse-dt" @tap="toggle()">
+          <view class="collapse-title">
+            <view class="mark"></view>
+            基础信息
+          </view>
+          <icon class="iconfont icon-jiantouyou"></icon>
+        </view>
+        <view wx:if="{{dropDown1}}" class="collapse-dd">
+          <picker disabled="{{selectData.product.categoryName!=null&&selectData.product.categoryName!=''}}"
+          range="{{selectData.lstCategory}}" range-key="text"
+          data-name="lstCategory" data-index="0" @change="pickerChange">
+            <view class="list_item">
+              <view class="title"><i>*</i>分类</view>
+              <view class="input">
+                <input type="text"
+                wx:if="{{selectData.product.categoryName==null||selectData.product.categoryName==''}}"
+                disabled="true" placeholder="请选择分类" value="{{slotsData[0].text}}" />
+                <input type="text"
+                wx:if="{{selectData.product.categoryName!=null&&selectData.product.categoryName!=''}}"
+                disabled="true" style="color:#999" placeholder="请选择分类" value="{{slotsData[0].text}}" />
+              </view>
+              <icon class="iconfont icon-jiantouyou"></icon>
+            </view>
+          </picker>
+          <autoComplete
+            @hide.user="hide"
+            title="品种"
+            key="relationCV"
+            :dataList.sync="selectData"
+            placeholder="请输入品种"
+            slotsKey="1"
+            :slotsData.sync="slotsData"
+            :isShow.sync="isShow"
+          ></autoComplete>
+          <view class="list_item" wx:if="{{slotsData[0].value==1}}" @tap="hide()">
+            <view class="title"><i>*</i>是否烘干</view>
+            <view class="input">
+              <radio-group class="radio-group" @change="radioChange">
+                <label class="radio" wx:for="{{radios}}"  wx:key="{{index}}">
+                  <radio value="{{item.name}}" checked="{{item.checked}}"/>{{item.value}}
+                </label>
+              </radio-group>
+            </view>
+          </view>
+          <view class="upload" @tap="hide()">
+            <view class="title"><i>*</i> 添加图片(1~4张)</view>
+            <view class="img">
+              <image @tap="chooseImage({{index}});" @error="errorimg({{index}})" src="{{item}}"
+                    wx:for="{{preview}}" wx:key="{{index}}"></image>
+            </view>
+          </view>
+          <view class="perch"></view>
+          <autoComplete2
+            @hide.user="hide"
+            title="产地"
+            key="relationVO"
+            :dataList.sync="selectData"
+            placeholder="请输入产地"
+            slotsKey="2"
+            :slotsData.sync="slotsData"
+            :isShow.sync="isShow2"
+          ></autoComplete2>
+          <autoComplete3
+            @hide.user="hide"
+            custom="1"
+            title="品牌"
+            key="relationVB"
+            :dataList.sync="selectData"
+            placeholder="请输入品牌"
+            slotsKey="3"
+            :slotsData.sync="slotsData"
+            :isShow.sync="isShow3"
+          ></autoComplete3>
+          <!-- <picker @tap="hide()" range="{{selectData.relationVB}}" range-key="text"
+                  data-name="relationVB" data-index="3" @change="pickerChange">
+            <view class="list_item">
+              <view class="title">品牌</view>
+              <view class="input">
+                <input type="text" disabled="true" placeholder="请选择品牌" value="{{slotsData[3].text}}" />
+              </view>
+              <icon class="iconfont icon-jiantouyou"></icon>
+            </view>
+          </picker> -->
+          <picker @tap="hide()" range="{{selectData.lstWarehouse}}" range-key="text"
+                  data-name="lstWarehouse" data-index="5" @change="pickerChange">
+            <view class="list_item">
+              <view class="title"><i>*</i>提货仓</view>
+              <view class="input">
+                <input type="text" disabled="true" placeholder="请选择仓库" value="{{slotsData[5].text}}" />
+              </view>
+              <icon class="iconfont icon-jiantouyou"></icon>
+            </view>
+          </picker>
+          <view @tap="hide()" class="list_item">
+            <view class="title"><i>*</i>仓库地址</view>
+            <view class="input">
+              <input disabled value="{{address}}" placeholder="请选择仓库地址" />
+            </view>
+          </view>
+          <autoComplete4
+            @hide.user="hide"
+            custom="1"
+            title="详细地址"
+            key="lstShopRegion"
+            :dataList.sync="selectData"
+            placeholder="请输入详细地址"
+            slotsKey="7"
+            :slotsData.sync="slotsData"
+            :isShow.sync="isShow4"
+          ></autoComplete4>
+          <view class="list_item" @tap="hide()">
+            <view class="title"><i>*</i>是否面议</view>
+            <view class="input">
+              <radio-group class="radio-group" @change="radioChanges">
+                <label class="radio" wx:for="{{radio}}"  wx:key="{{index}}">
+                  <radio value="{{item.name}}" checked="{{item.checked}}"/>{{item.value}}
+                </label>
+              </radio-group>
+            </view>
+          </view>
+          <view wx:if="{{isBargain == 0}}" @tap="hide()" class="list_item">
+            <view class="title"><i>*</i>价格</view>
+            <view class="input flex">
+              <input class="miniInput" type="number" @blur="input" id="price" value="{{input.price}}" />
+              <text class="inputs-line">—</text>
+              <input class="miniInput" type="number" @blur="input" id="maxprice" value="{{input.maxprice}}" />
+            </view>
+            <picker range="{{selectData.lstUnit}}" range-key="text"
+                    data-name="lstUnit" data-index="6" @change="pickerChange">
+              <view>
+                <i class="red">*</i> 单位 {{slotsData[6].text}}
+                <icon class="iconfont icon-jiantouyou"></icon>
+              </view>
+            </picker>
+          </view>
+          <view @tap="hide()" class="list_item">
+            <view class="title"><i>*</i>库存量</view>
+            <view class="input">
+              <input type="number" @blur="input" id="stockQuantity" value="{{input.stockQuantity}}" placeholder="请输入库存数量" />
+            </view>
+          </view>
+          <view @tap="hide()" class="list_item">
+            <view class="title"><i>*</i>规格</view>
+            <view class="input">
+              <input @blur="input" id="specification" value="{{input.specification}}" placeholder="例：2-6cm*20-100cm*2-3m" />
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="collapse-wrap">
+      <view class="collapse-dl {{!dropDown2?'':'active'}}">
+        <view class="collapse-dt" @tap="toggles">
+          <view class="collapse-title">
+            <view class="mark"></view>
+            更多信息
+          </view>
+          <icon class="iconfont icon-jiantouyou"></icon>
+        </view>
+        <view wx:if="{{dropDown2}}" class="collapse-dd">
+          <view class="list_item" wx:if="{{slotsData[0].value==2}}">
+            <view class="title">{{mean}}</view>
+            <view class="input">
+              <input type="number" maxlength="10" @blur="input" id="meanSquare" placeholder="请输入{{mean}}" value="{{input.meanSquare}}" />
+            </view>
+              <view>
+                {{slotsData[6].text}}
+              </view>
+          </view>
+          <picker @tap="hide()" range="{{selectData.relationVG}}" range-key="text"
+                  data-name="relationVG" data-index="4" @change="pickerChange">
+            <view class="list_item">
+              <view class="title">等级</view>
+              <view class="input">
+                <input type="text" disabled="true" placeholder="请选择等级" value="{{slotsData[4].text}}" />
+              </view>
+              <icon class="iconfont icon-jiantouyou"></icon>
+            </view>
+          </picker>
+          <view @tap="hide()" class="list_item">
+            <view class="title">起售量</view>
+            <view class="input">
+              <input type="number" @blur="input" id="minimumOrderQuantity" value="{{input.minimumOrderQuantity}}" placeholder="请输入起售数量" />
+            </view>
+          </view>
+          <view class="list_item">
+            <view class="title align-top">产品简介</view>
+            <view class="input">
+              <textarea maxlength="500" @input="input" id="introduction" placeholder="请输入500字以内产品简介" value="{{input.introduction}}" />
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="bottomBtn">
+      <button @tap="save(1,false);" wx:if="{{status != 3}}">暂存</button>
+      <button @tap="keep();" wx:if="{{status == 3}}">保存</button>
+      <button @tap="save(2,true);" wx:if="{{status == 0}}">立即发布</button>
+      <button @tap="save(2,true);" wx:if="{{status == 1}}">提交审核</button>
+    </view>
+    <toast />
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy"
+  import input from '../../mixins/input'
+  import validate from '../../utils/Validate'
+  import upload from '../../utils/Upload'
+  import Toast from '../../components/toast'
+  import { TOKEN } from "../../utils/Constant"
+  import product_api from "../../api/product_module"
+  import Tips from '../../utils/Tips'
+  import autoComplete from '../../components/autoComplete'
+
+  export default class publish extends wepy.page {
+    components = {
+      toast: Toast,
+      autoComplete:autoComplete,
+      autoComplete2:autoComplete,
+      autoComplete3:autoComplete,
+      autoComplete4:autoComplete
+    };
+    mixins=[input];
+    computed = {
+      address:function () {
+        if(!this.selectData.lstWarehouse) {
+          return;
+        }
+        for(let i of this.selectData.lstWarehouse) {
+          if(i.value == this.slotsData[5].value) {
+            return i.address;
+            break;
+          }
+        }
+      }
+    }
+    data = {
+      dropDown1:true,
+      dropDown2:true,
+      isShow:false,
+      isShow2:false,
+      isShow3:false,
+      isShow4:false,
+      radios:[
+        {name: '1', value: '干板',checked:'true'},
+        {name: '0', value: '湿板'},
+      ],
+      radio:[
+        {name: '1', value: '是'},
+        {name: '0', value: '否',checked:'true'},
+      ],
+      preview: [
+        //商品预览图
+        "../../images/upload/uploadImg.png",
+        "../../images/upload/uploadImg.png",
+        "../../images/upload/uploadImg.png",
+        "../../images/upload/uploadImg.png"
+      ],
+      uploadUrl: ['','','',''],    //上传所需图片地址,变量名固定
+      imageUrls: [],                //最终上传图片地址，去掉中间空字符串
+      pkid:0,
+      token:'',
+      selectData:{},    //选择菜单数据
+      slotsData: [],    //提交表单所需数据
+      input:{           //用户输入数据
+        price:'',
+        maxprice:'',
+        stockQuantity:'999',         //库存量
+        minimumOrderQuantity:'1',   //起售量
+        introduction:'', //产品简介
+        meanSquare:'',//平均方
+        specification:''  //规格
+      },
+      ajax:false,
+      state: {      //选择原木或者板材的切换文案
+        placeholder:'请输入厚度',
+        text:'厚度',
+        show:true
+      },
+      page:0,
+      status:0,  //商品状态
+      isDry:0,   //是否烘干
+      isBargain:0,   //是否面议
+      mean:'平均方'
+    };
+
+    onLoad({pkid,status,page}) {
+      let title = '发布商品'
+      if(pkid) {
+        this.pkid = Number(pkid);
+        this.status = status;
+        title = '编辑商品'
+      }
+      if(page) {
+        this.page = page;   //发布成功后需要返回的层级
+      }
+      wepy.setNavigationBarTitle({
+        title: title
+      })
+    }
+
+    onShow() {
+      this.token=wepy.getStorageSync(TOKEN);
+      if(this.ajax) {
+        return;
+      }
+      //初始化提交表单所需数据,发布商品时需再次调用
+      for(let i =0;i<8;i++) {
+        this.slotsData.push({
+          text:'',
+          value:null
+        })
+      }
+      this.dataInit();
+    }
+
+    async dataInit() {
+      let r = await product_api.editproduct({
+        pkid:this.pkid,
+        token:this.token
+      });
+      if(r) {
+        this.selectData = r.result;
+        if(this.pkid != 0) {
+          //pkid存在，赋初始值
+          this.infoInit();
+        }else {
+          //默认选择
+          this.selectInit([0,5,6],[
+            'lstCategory',
+            'lstWarehouse',
+            'lstUnit',
+          ],[0,0,0]);
+        }
+        this.ajax = true;
+        this.$apply();
+      }
+    }
+
+    selectInit(index,name,select) {
+      for(let i = 0;i<index.length;i++) {
+        this.slotsData[index[i]].text = this.selectData[name[i]][select[i]].text;
+        this.slotsData[index[i]].value = Number(this.selectData[name[i]][select[i]].value);
+      }
+    }
+
+    infoInit() {
+      let product = this.selectData.product;
+      let productItem = this.selectData.productItem;
+
+      this.input.minimumOrderQuantity = product.minimumOrderQuantity;
+      this.input.stockQuantity = productItem.stockQuantity;
+      this.input.meanSquare = productItem.meanSquare;
+      this.input.introduction = product.introduction;
+      //平均方
+      for(let i = 0;i<this.selectData.lstMeanSquareUnit.length;i++) {
+        if(this.selectData.lstMeanSquareUnit[i].value == productItem.meanSquareUnit) {
+          this.slotsData[13].text = this.selectData.lstMeanSquareUnit[i].text;
+          this.slotsData[13].value = this.selectData.lstMeanSquareUnit[i].value;
+          break;
+        }
+      }
+
+      for(let i = 0;i<this.selectData.images.length;i++) {
+        this.preview[i] = this.selectData.imgShowPath+this.selectData.images[i].thumbPath;
+        this.uploadUrl[i] = this.selectData.images[i].actualPath;
+      }
+      if(productItem.salesPrice===0 && productItem.salesPriceUpper===0) {
+        this.radio = [
+          {name: '1', value: '是',checked:'true'},
+          {name: '0', value: '否'},
+        ];
+        this.isBargain = '1';
+      }else {
+        if(productItem.salesPrice!==0) {
+          this.input.price = productItem.salesPrice;
+        }
+        if(productItem.salesPriceUpper!==0) {
+          this.input.maxPrice = productItem.salesPriceUpper;
+        }
+      }
+      //分类
+      this.slotsData[0].text = product.categoryName;
+      this.slotsData[0].value = product.categoryId;
+      //品种
+      this.slotsData[1].text = product.varietyName;
+      this.slotsData[1].value = product.varietyId;
+      //产地
+      this.slotsData[2].text = product.originName;
+      this.slotsData[2].value = product.originId;
+      //品牌
+      this.slotsData[3].text = product.brandName;
+      this.slotsData[3].value = product.brandId;
+      //等级
+      this.slotsData[4].text = product.gradeName;
+      this.slotsData[4].value = product.gradeId;
+      //提货仓
+      this.slotsData[5].text = product.warehouseName;
+      this.slotsData[5].value = product.warehouseId;
+      //计量单位
+      this.slotsData[6].text = product.unitName;
+      this.slotsData[6].value = product.unit;
+      //详细地址
+      this.slotsData[7] = {
+        text:product.warehousePosition,
+        value:0
+      }
+      //规格
+      this.input.specification = productItem.specification;
+
+      if(this.slotsData[0].value ==  1) {
+        //板材
+        this.state = {
+          placeholder:'请输入厚度',
+          text:'厚度',
+          show:true
+        };
+      }else if(this.slotsData[0].value ==  2) {
+        //原木
+        this.state = {
+          placeholder:'请输入直径',
+          text:'直径',
+          show:false
+        };
+      }
+      if(this.slotsData[6].value == 2) {
+        this.mean = '平均重量';
+      }else {
+        this.mean = '平均方';
+      }
+    }
+
+    methods = {
+      toggle(){
+        this.dropDown1=!this.dropDown1;
+      },
+      toggles(){
+        this.dropDown2=!this.dropDown2;
+        setTimeout(() => {
+          wx.pageScrollTo({
+            scrollTop: 2000,  //滚动到底部，随便给点
+            duration: 300
+          })
+        },100);
+      },
+      hide() {
+        this.isShow = false;
+        this.isShow2 = false;
+        this.isShow3 = false;
+        this.isShow4 = false;
+      },
+      //选择是否烘干
+      radioChange(e){
+        if(e.detail.value==0){
+          this.isDry=0;
+        }else{
+          this.isDry=1;
+        }
+      },
+      //选择是否面议
+      radioChanges(e){
+        if(e.detail.value==0){
+          this.isBargain=0;
+        }else{
+          this.isBargain=1;
+        }
+      },
+      //保存
+      keep() {
+        if(!this.saveValidate()){
+          this.affirm();
+          return;
+        }
+        this.imageUrls = [];
+        for(let i = 0;i<this.uploadUrl.length;i++) {
+          if(this.uploadUrl[i] != '') {
+            this.imageUrls.push(this.uploadUrl[i]);
+          }
+        }
+        if(this.imageUrls.length != this.selectData.images.length) {
+          this.affirm();
+          return;
+        }
+        for(let i = 0;i<this.imageUrls.length;i++) {
+          if(this.imageUrls[i] != this.selectData.images[i].actualPath) {
+            this.affirm();
+            break;
+          }
+        }
+        this.submit(1,false);
+      },
+      //暂存或者提交
+      async save(saveType,type) {
+        this.submit(saveType,type);
+      },
+      //选择菜单操作
+      pickerChange(e) {
+        let index = e.target.dataset.index;
+        let name = e.target.dataset.name;
+        let value = e.detail.value;
+
+        this.slotsData[index].text = this.selectData[name][value].text;
+        this.slotsData[index].value = Number(this.selectData[name][value].value);
+        if(this.slotsData[0].value ==  1) {
+          //板材
+          this.state = {
+            placeholder:'请输入厚度',
+            text:'厚度',
+            show:true
+          };
+        }else if(this.slotsData[0].value ==  2) {
+          //原木
+          this.state = {
+            placeholder:'请输入直径',
+            text:'直径',
+            show:false
+          };
+        }
+        if(this.slotsData[6].value == 2) {
+          this.mean = '平均重量';
+        }else {
+          this.mean = '平均方';
+        }
+      },
+      //调起相机相册
+      chooseImage(index) {
+        upload.minigramupload(this,index,{
+          type:2,
+          isThumb:1
+        });
+      },
+      errorimg(index){
+        this.preview[index]="../../images/nopic.jpg";
+      }
+    }
+
+    async affirm() {
+      await Tips.confirm('商品即将下架，重新提交审核');
+      try{
+        this.submit(2,true,'商品已下架');
+      }catch(err){}
+    }
+
+    //发布||提交
+    async submit(saveType,type,msg) {
+      this.imageUrls = [];
+      for(let i = 0;i<this.uploadUrl.length;i++) {
+        if(this.uploadUrl[i] != '') {
+          this.imageUrls.push(this.uploadUrl[i]);
+        }
+      }
+      if(type =='true') {
+        if(!this.validate()){
+          return;
+        }
+        if(this.isBargain==0) {
+          if(this.input.price === '' && this.input.maxprice === '') {
+            this.$invoke('toast', 'show', {
+              message:'请填写价格',
+            });
+            return;
+          }
+          if (this.input.price !== ''&&!/^[0-9]+\d*$/.test(this.input.price)) {
+            this.$invoke('toast', 'show', {
+              message:'最小价格应大于等于0',
+            });
+            Toast({ message: "最小价格应大于等于0",position:'bottom', during: 1000 });
+            return;
+          }
+          if (this.input.maxprice !== ''&&!/^[0-9]+\d*$/.test(this.input.maxprice)) {
+            this.$invoke('toast', 'show', {
+              message:'最大价格应大于等于0',
+            });
+            return;
+          }
+          if(this.input.price !== ''&&this.input.maxprice !== '' && Number(this.input.price)>Number(this.input.maxprice)) {
+            this.$invoke('toast', 'show', {
+              message:'价格区间输入不合法',
+            });
+            return;
+          }
+        }
+      }
+      let r = await product_api.save({
+        saveType:Number(saveType),    //保存类型（1：暂存——不验证必填字段，2保存）
+        token: this.token,
+        productId: this.pkid,
+        categoryId: this.slotsData[0].value,
+        varietyId: Number(this.slotsData[1].value),
+        varietyName: this.slotsData[1].text,
+        originId: Number(this.slotsData[2].value),
+        originName: this.slotsData[2].text,
+        brandId: Number(this.slotsData[3].value),
+        brandName: this.slotsData[3].text,
+        gradeId: this.slotsData[4].value,
+        gradeName: this.slotsData[4].text,
+        warehouseId: this.slotsData[5].value,
+        warehousePosition:this.slotsData[7].text,
+        salesPrice: this.isBargain==1?0:Number(this.input.price),
+        salesPriceUpper: this.isBargain==1?0:Number(this.input.maxprice),
+        unit: this.slotsData[6].value,
+        specification:this.input.specification,
+        minimumOrderQuantity: Number(this.input.minimumOrderQuantity),
+        stockQuantity: Number(this.input.stockQuantity),
+        imageUrls: this.imageUrls,
+        isDry:this.slotsData[0].value==1?this.isDry:null,  //是否烘干(0:否，1:是)
+        meanSquare:this.slotsData[0].value==2?this.input.meanSquare:null,  //平均方
+        introduction:this.input.introduction
+      })
+      if(r) {
+        if(type =='true' && !msg) {
+          let res = await product_api.pullon({
+            token: this.token,
+            productIds: [r.result.effect]
+          });
+          if(res) {
+            //新商品发布，清空表单数据
+            this.radios=[
+              {name: '1', value: '干板',checked:'true'},
+              {name: '0', value: '湿板'},
+            ];
+            this.radio=[
+              {name: '1', value: '是'},
+              {name: '0', value: '否',checked:'true'},
+            ];
+            this.preview= [
+              //商品预览图
+              "../../images/upload/uploadImg.png",
+              "../../images/upload/uploadImg.png",
+              "../../images/upload/uploadImg.png",
+              "../../images/upload/uploadImg.png"
+            ];
+            this.uploadUrl= ['','','',''];    //上传所需图片地址,变量名固定
+            this.imageUrls= [];                //最终上传图片地址，去掉中间空字符串
+            this.pkid=0;
+            this.selectData={};    //选择菜单数据
+            this.slotsData= [];    //提交表单所需数据
+            this.input={           //用户输入数据
+              price:'',
+              maxprice:'',
+              stockQuantity:'999',         //库存量
+              minimumOrderQuantity:'1',   //起售量
+              introduction:'', //产品简介
+              meanSquare:'',//平均方
+              specification:''  //规格
+            };
+            this.state= {      //选择原木或者板材的切换文案
+              placeholder:'请输入厚度',
+              text:'厚度',
+              show:true
+            };
+            this.page=0;
+            this.status=0;  //商品状态
+            this.isDry=0;   //是否烘干
+            this.isBargain=0;   //是否面议
+            this.mean='平均方';
+            for(let i =0;i<8;i++) {
+              this.slotsData.push({
+                text:'',
+                value:null
+              })
+            }
+            this.dataInit();
+            this.$navigate(`./issueSuccess?page=${this.page}`);
+          }
+        }else {
+          if(msg) {
+            this.$invoke('toast', 'show', {
+              message:msg,
+              position: 'bottom'
+            });
+            this.dataInit();
+          }else {
+            this.pkid = r.result.effect;
+            Tips.success("保存成功");
+          }
+        }
+      }
+    }
+
+    //发布商品验证
+    validate(){
+      let rules=[
+        {
+          value: this.slotsData[0].value,
+          method: 'optional',
+          message: '请选择分类'
+        },
+        {
+          value: this.slotsData[1].value,
+          method: 'optional',
+          message: '请输入品种'
+        },
+        {
+          value: this.imageUrls.length,
+          method: 'amount',
+          message: '请上传商品图片'
+        },
+        {
+          value: this.slotsData[2].value,
+          method: 'optional',
+          message: '请输入产地'
+        },
+        {
+          value: this.slotsData[3].value,
+          method: 'optional',
+          message: '请输入品牌'
+        },
+        {
+          value: this.slotsData[5].value,
+          method: 'optional',
+          message: '请选择提货仓'
+        },
+        {
+          value: this.slotsData[7].text,
+          method: 'optional',
+          message: '请输入详细地址'
+        },
+        {
+          value: this.input.stockQuantity,
+          method: 'optional',
+          message: '请输入库存数量'
+        },
+        {
+          value: this.input.specification,
+          method: 'optional',
+          message: '请输入规格'
+        },
+        {
+          value: this.input.minimumOrderQuantity,
+          method: 'max',
+          param: this.input.stockQuantity,
+          message: '起售量不能大于库存量'
+        },
+      ]
+      return this.check(rules);
+    }
+
+    //保存商品必要字段验证
+    saveValidate() {
+      let rules=[
+        {
+          value: this.slotsData[2].value,
+          method: 'equalTo',
+          param:  this.selectData.product.originId,
+        },
+        {
+          value: this.slotsData[3].value,
+          method: 'equalTo',
+          param:  this.selectData.product.brandId,
+        },
+        {
+          value: this.slotsData[4].value,
+          method: 'equalTo',
+          param:  this.selectData.product.gradeId,
+        },
+        {
+          value: this.slotsData[6].value,
+          method: 'equalTo',
+          param:  this.selectData.product.unit,
+        }
+      ]
+      return this.check(rules);
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/collapse-wrap";
+  @import "../../styles/components/list-item";
+  .publish-page {
+    padding-bottom: 60px;
+    .flex {
+      @include fj;
+      align-items: center;
+    }
+    .miniInput {
+      /*background: #f5f5f5;
+      padding: 0 5px;
+      margin: 0 10rpx;
+      height: 1.6rem!important;
+      line-height: 1;*/
+      margin-right:20rpx;
+    }
+    .inputs-line{
+      padding-right:20rpx;
+    }
+    .perch {
+      height: 10px;
+    }
+    .bottomBtn {
+      position: fixed;
+      bottom: 0;
+      height: 50px;
+      @include fj;
+      width: 100%;
+      z-index: 9;
+      button {
+        width: 100%;
+        border: none;
+        border-radius: 0;
+        line-height: 50px;
+        color: #fff;
+        font-size: 16px;
+        background: $danger;
+      }
+      button:nth-last-of-type(2) {
+        background: #d2d2d2;
+      }
+      // button:nth-of-type(2) {
+      //   background: $danger;
+      // }
+    }
+    .custom{
+      display: flex;
+      align-self:center;
+    }
+    .unit-txt{
+      display: inline-block;
+      width: 3em;
+      white-space:nowrap;
+      text-align: right;
+      margin-left:6rpx;
+    }
+  }
+</style>

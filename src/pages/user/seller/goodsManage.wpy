@@ -1,0 +1,250 @@
+<template>
+  <view class="goodsManage-page">
+    <view class="goods-list"  wx:if="{{items.length>0}}">
+      <navigator hover-class="none" class="goods-li"
+      url="./goodsDetail?pkid={{item.pkid}}" wx:for="{{items}}" wx:key="{{index}}">
+        <view class="goods-dl">
+          <view class="goods-dt">
+            <image src='{{item.imageUrl}}' @error="errorimg" data-errorimg="{{index}}"></image>
+          </view>
+          <view class="goods-dd">
+            <text class="desc">{{item.productName}}</text>
+            <view class="li-bottom">
+              <text class='price' wx:if="{{item.salesPrice==0}}">面议</text>
+              <text class='price' wx:if="{{item.salesPrice!=item.salesPriceUpper && item.salesPrice!=0}}">￥{{item.salesPrice}}~{{item.salesPriceUpper}}</text>
+              <text class='price' wx:if="{{item.salesPrice==item.salesPriceUpper && item.salesPrice!=0}}">￥{{item.salesPrice}}</text>
+              <view class="status">{{item.saleStatusText}}</view>
+            </view>
+          </view>
+        </view>
+        <view class="btn-group" wx:if="{{item.saleStatus!=2}}">
+          <view class="btn-ctrl" @tap.stop="delete({{item.pkid}},{{index}})">删除</view>
+          <view class="btn-ctrl" @tap.stop="pullOn({{item.pkid}})" wx:if="{{item.saleStatus==1}}">上架</view>
+          <view class="btn-ctrl" @tap.stop="pullOff({{item.pkid}},{{index}})"
+                wx:if="{{item.saleStatus==3}}">下架</view>
+          <view class="btn-ctrl" @tap.stop="edit({{item.pkid}},{{item.saleStatus}})">编辑</view>
+        </view>
+      </navigator>
+    </view>
+    <navigator hover-class="none" url="/pages/publish/index?page=2" class="greenBtn">+  添加新商品</navigator>
+    <view class="no-data" wx:if="{{items.length==0&&ajax}}">
+      <image  src="../../../../images/nodata/noStore.png" mode="aspectFit"></image>
+      <view class="descp">您还没有发布商品</view>
+      <navigator hover-class="none" class="goto" url="/pages/publish/index?page=2">快去发布商品啦</navigator>
+    </view>
+    <!--加载更多时动画-->
+    <bottomLoadMore :show.sync="showLoading" message="加载中..."></bottomLoadMore>
+    <!--暂无数据显示-->
+    <noMore :show.sync="is_noMore" message="没有更多数据了"></noMore>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import BottomLoadMore from "../../../components/bottomLoadMore"
+  import NoMore from "../../../components/noMore"
+  import product_api from "../../../api/product_module"
+  import { TOKEN } from '../../../utils/Constant'
+  import Tips from '../../../utils/Tips'
+  import Toast from '../../../components/toast'
+
+  export default class GoodsManage extends wepy.page {
+    config = {
+      navigationBarTitleText: '商品管理',
+      enablePullDownRefresh:true
+    };
+    components={
+      bottomLoadMore: BottomLoadMore,
+      noMore: NoMore,
+      toast:Toast
+    };
+    data={
+      token:'',
+      items: [], //商品列表
+      pageIndex:1,  //当前页码
+      pageCount:1,  //总页码
+      showLoading:true,
+      is_noMore:false,
+      ajax:false
+    };
+
+    onShow() {
+      this.token=wepy.getStorageSync(TOKEN);
+      this.items = [], //商品列表
+      this.pageIndex = 1,  //当前页码
+      this.pageCount = 1,  //总页码
+      this.load();
+    }
+    async load() {
+      this.showLoading=true;
+      this.is_noMore=false;
+      this.ajax=false;
+      let r = await product_api.myshopproducts({
+        searchKey:'',
+        token:this.token,
+        categoryId:0,
+        varietyId:0,
+        pageIndex:Number(this.pageIndex),
+      });
+      this.showLoading=false;
+      if(this.pageIndex>1) {
+        this.items=this.items.concat(...r.result.list);
+      }else {
+        this.items=r.result.list;
+      }
+      this.pageIndex=r.result.paging.pageIndex;
+      if(r.result.paging.pageCount != 0) {
+        this.pageCount=r.result.paging.pageCount;
+      }
+      if(this.pageIndex>=this.pageCount) {
+        this.is_noMore=true;
+      }
+      if(this.items.length==0){
+        this.is_noMore=false;
+        this.showLoading=false;
+      }
+      this.ajax=true;
+      this.$apply();
+    };
+    //下拉刷新
+    async onPullDownRefresh () {
+      if(this.items.length == 0) {
+        wepy.stopPullDownRefresh();
+        return;
+      }
+      this.pageIndex=1;
+      this.items=[];
+      await this.load();
+      wepy.stopPullDownRefresh();
+    };
+    //上拉加载
+    async onReachBottom() {
+      if(!this.is_noMore && this.items.length >0) {
+        this.pageIndex++;
+        this.load();
+      }
+    }
+    methods={
+      //删除
+      async delete(pkid,index){
+        await Tips.confirm('您是否确认删除该商品');
+        try{
+          let r= await product_api.delete({
+            token:this.token,
+            productIds:[pkid]
+          })
+          if(r){
+            this.items.splice(index,1);
+            this.$apply();
+            Tips.success("删除成功");
+          }
+        }catch(err){}
+      },
+      //上架
+      async pullOn(pkid){
+        let r= await product_api.pullon({
+          token:this.token,
+          productIds:[pkid]
+        })
+        if(r){
+          this.$navigate('/pages/publish/issueSuccess');
+        }
+      },
+      //下架
+      async pullOff(pkid,index){
+        await Tips.confirm('您是否确认下架该商品');
+        try{
+          let r= await product_api.pulloff({
+            token:this.token,
+            productIds:[pkid]
+          })
+          if(r){
+            this.items[index].saleStatus=1;
+            this.items[index].saleStatusText='已下架';
+            this.$apply();
+            Tips.success("下架成功");
+          }
+        }catch(err){}
+      },
+      //编辑||发布
+      edit(pkid,status){
+        this.$navigate(`../../publish/index?pkid=${pkid}&status=${status}&page=2`);
+      },
+      errorimg(e){
+        let index= e.target.dataset.errorimg; //获取循环的下标
+        this.items[index].imageUrl="../../../images/nopic.jpg";
+      }
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/mixin";
+  @import "../../../styles/components/goods-list";
+  .goodsManage-page{
+    padding-bottom:90rpx;
+    .goods-list{
+      background-color: transparent;
+    }
+    .goods-li{
+      background-color: #fff;
+      margin-bottom:20rpx;
+    }
+    .goods-dl{
+      padding:20rpx 0;
+      border-bottom:0;
+    }
+    .goods-dd{
+      min-height: 206rpx;
+      position: relative;
+      padding-bottom:48rpx;
+      .desc{
+        flex: none;
+      }
+      .li-bottom{
+        flex: none;
+        line-height:48rpx;
+        position: absolute;
+        left:0;
+        bottom:0;
+        width: 100%;
+      }
+    }
+  }
+  .btn-group{
+    width: 100%;
+    height:90rpx;
+    display: flex;
+    align-items: center;
+    border-top:1rpx solid $light;
+    justify-content: flex-end;
+  }
+  .status{
+    font-size:$text-nm;
+    line-height:44rpx;
+    color: $secondary;
+  }
+  .btn-ctrl{
+    width: 100rpx;
+    height:44rpx;
+    border: 2rpx solid $primary;
+    border-radius: 44rpx;
+    color: $primary;
+    font-size:$text-nm;
+    text-align: center;
+    line-height:42rpx;
+    margin-left:10rpx;
+  }
+  .greenBtn{
+    position: fixed;
+    left:0;
+    bottom:0;
+    width: 100%;
+    height:90rpx;
+    color: #fff;
+    background-color: $primary;
+    text-align: center;
+    line-height:90rpx;
+    font-size:$text-xl;
+  }
+</style>

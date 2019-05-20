@@ -1,0 +1,254 @@
+<template>
+  <view class="page-userInfo">
+    <view class="list_item">
+      <view class="title">手机</view>
+      <view class="input">
+        <input type="text" @blur="input" disabled value="{{input.mobile}}" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title"><i>*</i>姓名</view>
+      <view class="input">
+        <input type="text" disabled="{{isIdCardVerified==1 || (isIdCardVerified==0 && verifiedStatus==1)}}" maxlength="10" @input="input" id="fullname" placeholder="请输入您的真实姓名" value="{{input.fullname}}" />
+      </view>
+      <view wx:if="{{isIdCardVerified==0 && verifiedStatus!=1}}" class="go-verify" @tap="toPersonApply();">
+        去认证
+      </view>
+      <icon wx:if="{{isIdCardVerified==0 && verifiedStatus!=1}}" class="iconfont icon-jiantouyou"></icon>
+      <view wx:if="{{isIdCardVerified==1}}" class="verified">（已认证）</view>
+      <view wx:if="{{isIdCardVerified==0 && verifiedStatus==1}}" class="verified">（认证中）</view>
+    </view>
+    <view class="list_item">
+      <view class="title"><i>*</i>性别</view>
+      <view class="input">
+        <radio-group class="radio-group" @change="radioChange">
+          <label class="radio" wx:for="{{radios}}"  wx:key="{{index}}">
+            <radio value="{{item.name}}" checked="{{item.checked}}"/>{{item.value}}
+          </label>
+        </radio-group>
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">公司</view>
+      <view class="input">
+        <input type="text" disabled="{{isCompanyVerified==1}}" @input="input" id="companyName" placeholder="请输入您的公司名称" value="{{input.companyName}}" />
+      </view>
+      <view wx:if="{{isCompanyVerified==0 && companyVerifiedStatus!=1}}" class="go-verify" @tap="toConpanyApply();">
+        去认证
+      </view>
+      <view wx:if="{{isCompanyVerified==0 && companyVerifiedStatus==1}}" class="go-verify" @tap="approve();">
+        （认证中）
+      </view>
+      <icon wx:if="{{isCompanyVerified==0 && companyVerifiedStatus!=1}}" class="iconfont icon-jiantouyou"></icon>
+      <view wx:if="{{isCompanyVerified==1}}" class="verified">（已认证）</view>
+      <!-- <view wx:if="{{isCompanyVerified==0 && companyVerifiedStatus==1}}" class="verified">（认证中）</view> -->
+    </view>
+    <view class="list_item">
+      <view class="title">职位</view>
+      <view class="input">
+        <input type="text" maxlength="30" @blur="input" id="job" placeholder="请输入您的职位名称" value="{{input.job}}" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">电话</view>
+      <view class="input">
+        <input type="text" @blur="input" id="tel" placeholder="请输入您的联系方式" value="{{input.tel}}" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">传真</view>
+      <view class="input">
+        <input type="text" @blur="input" id="fax" placeholder="传真格式xxx-88888888" value="{{input.fax}}" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">邮箱</view>
+      <view class="input">
+        <input type="text" maxlength="100" @blur="input" id="email" placeholder="请输入您的邮箱地址" value="{{input.email}}" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title align-top">公司简介</view>
+      <view class="input">
+        <textarea maxlength="200" @input="input" id="introduce" placeholder="请输入200字以内简介" value="{{input.introduce}}" />
+      </view>
+    </view>
+    <button class="greenBtn" @tap="saveInfo">保存</button>
+    <toast />
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import { TOKEN } from "../../utils/Constant"
+  import validate from '../../utils/Validate'
+  import Tips from '../../utils/Tips'
+  import input from '../../mixins/input'
+  import member_api from '../../api/member_module'
+  import Toast from '../../components/toast'
+
+  export default class UserInfo extends wepy.page {
+    config = {
+        navigationBarTitleText: '个人信息'
+    };
+    mixins=[input];
+    components = {
+      toast: Toast
+    };
+    data={
+      token:'',
+      radios:[
+        {name: '1', value: '先生',checked:'true'},
+        {name: '0', value: '女士'},
+      ],
+      sex:1,
+      isIdCardVerified:-1,     //个人认证状态
+      verifiedStatus:null,
+      isCompanyVerified:-1,    //企业认证状态
+      companyVerifiedStatus:null,
+      input:{
+        mobile:'',     //手机
+        fullname:'',   //名字
+        companyName:'',//公司
+        job:'',        //职位
+        tel:'',        //电话
+        fax:'',        //传真
+        email:'',      //邮箱
+        introduce:''   //简介
+      },
+      serveUserName:null,
+      serveCompanyName:null
+    };
+    onShow(){
+      this.token=wepy.getStorageSync(TOKEN);
+      this.load();
+    }
+
+    async load() {
+      let r=await member_api.info({
+        token:this.token
+      })
+      if(r.result.sex==0){
+        this.radios[1].checked=true;
+        this.sex=0;
+      }
+      this.input.mobile=r.result.mobile;
+      this.input.fullname=r.result.name;
+      this.serveUserName=r.result.name;
+      this.input.companyName=r.result.companyName;
+      this.serveCompanyName=r.result.companyName;
+      this.input.job=r.result.position;
+      this.input.tel=r.result.telephone;
+      this.input.fax=r.result.fax;
+      this.input.email=r.result.email;
+      this.input.introduce=r.result.companyDescription;
+
+      this.isIdCardVerified=r.result.isIdCardVerified;
+      this.verifiedStatus=r.result.verifiedStatus;
+      this.isCompanyVerified=r.result.isCompanyVerified;
+      this.companyVerifiedStatus=r.result.companyVerifiedStatus;
+      this.$apply();
+    }
+
+    methods={
+      radioChange(e){
+        if(e.detail.value==0){
+          this.sex=0;
+        }else{
+          this.sex=1;
+        }
+      },
+      async saveInfo(){
+        if(!this.validate()){
+          return;
+        }
+        if(this.input.tel!=null && this.input.tel!='') {
+          if(!validate.call(this.input.tel)) {
+            this.$invoke('toast', 'show', {
+              message:'电话格式不正确',
+            });
+            return;
+          }
+        }
+        if(this.input.fax!=null && this.input.fax!='') {
+          if(!validate.fax(this.input.fax)) {
+            this.$invoke('toast', 'show', {
+              message:'传真格式不正确',
+            });
+            return;
+          }
+        }
+        if(this.input.email!=null && this.input.email!='') {
+          if(!validate.email(this.input.email)) {
+            this.$invoke('toast', 'show', {
+              message:'邮箱格式不正确',
+            });
+            return;
+          }
+        }
+        await member_api.updateinfo({
+          token:this.token,
+          mobile:this.input.mobile,
+          name:this.input.fullname,
+          sex:this.sex,
+          companyName:this.input.companyName,
+          position:this.input.job,
+          telephone:this.input.tel,
+          fax:this.input.fax,
+          email:this.input.email,
+          companyDescp:this.input.introduce
+        })
+        Tips.success('保存成功!');
+        this.load();
+      },
+      //前往个人认证
+      toPersonApply() {
+        if(this.serveUserName == this.input.fullname && this.input.fullname != null && this.input.fullname != '') {
+          this.$navigate(`./personApply?userName=${this.input.fullname}`)
+        }else {
+          this.$invoke('toast', 'show', {
+            message:"请先录入'姓名'并保存",
+          });
+        }
+      },
+      //前往企业认证
+      toConpanyApply(){
+        if(this.serveCompanyName == this.input.companyName && this.input.companyName != null && this.input.companyName != '') {
+          this.$navigate(`./companyApply?companyName=${this.input.companyName}`)
+        }else {
+          this.$invoke('toast', 'show', {
+            message:"请先录入'企业名称'并保存",
+          });
+        }
+      },
+      approve() {
+        this.$navigate(`./companyApply?companyName=${this.input.companyName}&edit=1`)
+      }
+    }
+    validate(){
+      let rules=[
+        {
+          value: this.input.fullname,
+          method: 'optional',
+          message: '请输入真实姓名'
+        }
+      ]
+      return this.check(rules)
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/list-item";
+  .go-verify{
+    font-size:$text-nm;
+    color: $blue;
+    line-height:48rpx;
+  }
+  .verified{
+    font-size:$text-nm;
+    color: #999;
+    line-height:48rpx;
+  }
+</style>

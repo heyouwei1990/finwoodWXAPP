@@ -1,0 +1,413 @@
+<template>
+  <view>
+    <scroll-view scroll-y style="height: 100vh;" class="{{product.saleStatus==2?'content noPadding':'content'}}">
+      <swiper class='swiper-wrap'
+              indicator-dots='{{listImg.length>1}}'
+              indicator-color='rgba(255,255,255,0.6)'
+              indicator-active-color='rgba(255,255,255,1)'>
+        <block>
+          <swiper-item wx:for="{{listImg}}" wx:key="{{index}}">
+            <image src='{{item}}' @error="errorimg" data-errorimg="{{index}}"></image>
+          </swiper-item>
+        </block>
+      </swiper>
+      <view class="goods-info">
+        <view class="top">
+          <view class="flex1">
+            <view class="desc">{{product.productName}}</view>
+            <text class='price'
+            wx:if="{{productItems.salesPrice!=productItems.salesPriceUpper && productItems.salesPrice!=0}}">
+            ￥{{productItems.salesPrice}}~{{productItems.salesPriceUpper}}</text>
+            <text class='price'
+            wx:if="{{productItems.salesPrice==productItems.salesPriceUpper && productItems.salesPrice!=0}}">
+            ￥{{productItems.salesPrice}}</text>
+            <text class='price' wx:if="{{productItems.salesPrice==0}}">面议</text>
+          </view>
+          <view class="btn-fav" wx:if="{{!isfavorite}}" @tap="fav();">
+            <icon class="iconfont icon-shoucang"></icon>
+            <view>收藏</view>
+          </view>
+          <view class="btn-fav had" wx:if="{{isfavorite}}" @tap="fav();">
+            <icon class="iconfont icon-shoucanghou"></icon>
+            <view>已收藏</view>
+          </view>
+        </view>
+        <view class="bottom">
+          <view class="seller">
+            <text>{{product.shopName}}</text>
+            <icon class="iconfont icon-renzheng"></icon>
+          </view>
+          <view class="time">{{product.lastModifiedTime}}</view>
+        </view>
+      </view>
+      <view class="sec-cut"></view>
+      <view class="sec-hd">商品参数</view>
+      <view class="info-list">
+        <view class="info-li">
+          <text>编号：</text>
+          <view class="val">{{product.productCode}}</view>
+        </view>
+        <view class="info-li">
+          <text>品种：</text>
+          <view class="val">{{product.varietyName}}</view>
+        </view>
+        <view class="info-li">
+          <text>类型：</text>
+          <view class="val" wx:if="{{product.categoryName != null}}">{{product.categoryName}}</view>
+        </view>
+        <view class="info-li">
+          <text>产地：</text>
+          <view class="val">{{product.originName}}</view>
+        </view>
+        <view class="info-li">
+          <text>品牌：</text>
+          <view class="val" wx:if="{{product.brandName != null}}">{{product.brandName}}</view>
+        </view>
+        <view class="info-li">
+          <text>等级：</text>
+          <view class="val" wx:if="{{product.gradeName != null}}">{{product.gradeName}}</view>
+        </view>
+        <view class="info-li">
+          <text>规格：</text>
+          <view class="val">{{product.specification}}</view>
+        </view>
+        <view class="info-li" wx:if="{{product.categoryId == 1}}">
+          <text>是否烘干：</text>
+          <view class="val">{{product.isDryText}}</view>
+        </view>
+        <view class="info-li" wx:if="{{product.categoryId != 1}}">
+          <text>平均方：</text>
+          <view class="val" wx:if="{{product.meanSquare !=null && product.meanSquareUnitText !=null}}">{{product.meanSquare}} {{product.meanSquareUnitText}}</view>
+          <view class="val" wx:if="{{product.meanSquare ==null && product.meanSquareUnitText ==null}}"></view>
+        </view>
+        <view style="height:auto;" class="info-li" wx:if="{{product.introduction != null}}">
+          <text style="white-space:nowrap">产品简介：</text>
+          <view class="val">{{product.introduction}}</view>
+        </view>
+      </view>
+      <view class="sec-cut"></view>
+      <view class="sec-hd">交易方式</view>
+      <view class="info-list">
+        <!-- <view class="info-li">
+          <text>是否担保：</text>
+          <view class="val">{{assure}}</view>
+        </view>
+        <view class="info-li">
+          <text>能否议价：</text>
+          <view class="val">{{product.isBarginText}}</view>
+        </view> -->
+        <view class="info-li">
+          <text>结算方式：</text>
+          <view class="val">余额支付 / 银行转账</view>
+        </view>
+        <view class="info-li">
+          <text>起订数量：</text>
+          <view class="val">{{product.minimumOrderQuantity}}{{product.unitName}}</view>
+        </view>
+        <view class="info-li">
+          <text>交货地址：</text>
+          <view class="val">{{product.warehouseProvinceName}}{{product.warehouseCityName}}{{product.warehouseName}}</view>
+        </view>
+        <!-- <view class="info-li">
+          <text>预付比例：</text>
+          <view class="val">{{product.advanceRatio}}%</view>
+        </view> -->
+      </view>
+      <view class="sec-cut"></view>
+    </scroll-view>
+    <view class="fixed-bottom" wx:if="{{product.saleStatus!=2}}">
+      <view class="ctrl-btn" @tap="refresh()">刷新</view>
+      <view class="ctrl-btn" @tap="del()">删除</view>
+      <view class="ctrl-btn" @tap="pullOn()" wx:if="{{product.saleStatus==1}}">上架</view>
+      <view class="ctrl-btn" @tap="pullOff()" wx:if="{{product.saleStatus==3}}">下架</view>
+      <view class="ctrl-btn" @tap="edit()">编辑</view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  import { TOKEN } from "../../../utils/Constant";
+  import product_api from "../../../api/product_module"
+  import shop_api from "../../../api/shop_module"
+  import Tips from "../../../utils/Tips.js"
+
+  export default class Detail extends wepy.page {
+    config = {
+      navigationBarTitleText: "商品详情"
+    };
+    data = {
+      token:'',
+      pkid:null,
+      listImg:[],   //商品轮播
+      productImg:null,
+      product:{   //商品信息
+        isSecuried:1
+      },
+      productItems:null,  //商品参数
+      shareImageUrl:null,
+      isfavorite:false,   //是否收藏
+    };
+
+    computed = {
+      assure() {
+        return this.product.isSecuried==1?'担保交易':'否';
+      },
+    };
+
+    async onLoad({pkid}) {
+      this.pkid=Number(pkid);
+    }
+
+    onShow() {
+      this.token=wepy.getStorageSync(TOKEN);
+      this.load();
+      this.getFav();
+    }
+    async load(){
+      let r = await product_api.detail({
+        pkid:this.pkid,
+        token:this.token
+      });
+      this.listImg=r.result.images;
+      this.productImg=r.result.images[0];
+      this.product=r.result.product;
+      this.productItems=r.result.productItems[0];
+      this.shareImageUrl=r.result.shareImageUrl;
+      this.$apply();
+    }
+
+    async getFav() {
+      let fav = await product_api.isfavorite({
+        pkid:this.pkid,
+        token:this.token
+      });
+      this.isfavorite=fav.result;
+      this.$apply();
+    }
+
+
+    methods = {
+      //编辑
+      edit(){
+        this.$navigate(`/pages/publish/index?pkid=${this.pkid}&status=${this.product.saleStatus}&page=3`);
+      },
+      //收藏
+      async fav() {
+        let r = await product_api.collect({
+          pkid:this.pkid,
+          token:this.token
+        });
+        if(!r) return;
+        if(this.isfavorite) {
+          Tips.success('取消收藏成功');
+        }else {
+          Tips.success('收藏成功');
+        }
+        this.getFav();
+      },
+      //刷新
+      async refresh(){
+        let r= await product_api.refresh({
+          token:this.token,
+          productIds:[this.pkid]
+        })
+        if(r){
+          this.load();
+          Tips.success("刷新成功");
+        }
+      },
+      //删除
+      async del(){
+        await Tips.confirm('您是否确认删除该商品');
+        try{
+          let r= await product_api.delete({
+            token:this.token,
+            productIds:[this.pkid]
+          })
+          if(r){
+            Tips.success("删除成功");
+            setTimeout(()=>{
+              wepy.navigateBack();
+            },1000)
+          }
+        }catch(err){}
+      },
+      //上架
+      async pullOn(){
+        let r= await product_api.pullon({
+          token:this.token,
+          productIds:[this.pkid]
+        })
+        if(r){
+          this.$navigate(`/pages/publish/issueSuccess?page=2`);
+        }
+      },
+      //下架
+      async pullOff(){
+        await Tips.confirm('您是否确认下架该商品');
+        try{
+          let r= await product_api.pulloff({
+            token:this.token,
+            productIds:[this.pkid]
+          })
+          if(r){
+            Tips.success("下架成功");
+            this.load();
+          }
+        }catch(err){}
+      },
+      errorimg(e){
+        let index= e.target.dataset.errorimg //获取循环的下标
+        this.listImg[index]="../../../images/nopic.jpg";
+      },
+    };
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/mixin";
+  .content {
+    padding-bottom: 90rpx;
+  }
+  .content.noPadding{
+    padding-bottom:0;
+  }
+  .noscroll {
+    height: 100%;
+    overflow: hidden;
+  }
+  .swiper-wrap {
+    height: 750rpx;
+    image {
+      width: 750rpx;
+      height: 750rpx;
+      display: block;
+    }
+  }
+  .goods-info {
+    padding: 20rpx 30rpx;
+    background-color: #fff;
+    .top {
+      @include fj;
+      align-items: flex-start;
+      .flex1 {
+        width: 200rpx;
+        flex: 1;
+      }
+      .desc {
+        word-break: break-all;
+        font-size: $text-nm;
+        color: $dark;
+        line-height: 44rpx;
+      }
+      .price {
+        color: $danger;
+        font-size: $text-nm;
+        line-height: 44rpx;
+        display: block;
+        margin-top: 12rpx;
+        margin-bottom: 12rpx;
+      }
+      .btn-fav {
+        text-align: right;
+        color: #999;
+        font-size: $text-xs;
+        line-height: 44rpx;
+        margin-left: 10rpx;
+        min-width:84rpx;
+        view {
+          color: inherit;
+        }
+      }
+      .iconfont {
+        font-size: 44rpx;
+        margin-bottom: 10rpx;
+      }
+      .btn-fav.had {
+        color: $danger;
+      }
+    }
+    .bottom {
+      @include fj;
+      font-size: $text-xs;
+      line-height: 48rpx;
+      align-items: flex-end;
+      .seller {
+        flex: 1;
+        overflow: hidden;
+        color: #999;
+      }
+      .icon-renzheng {
+        color: $secondary;
+        font-size: 28rpx;
+      }
+      .time {
+        color: #999;
+      }
+    }
+  }
+  .sec-hd {
+    height: 90rpx;
+    line-height: 90rpx;
+    padding: 21rpx 30rpx;
+    line-height: 48rpx;
+    font-size: $text-nm;
+    color: #333;
+    border-bottom: 1rpx solid $light;
+    background-color: #fff;
+    &:before {
+      content: "";
+      display: inline-block;
+      width: 8rpx;
+      height: 1em;
+      background-color: $primary;
+      border-radius: 4rpx;
+      vertical-align: middle;
+      margin-top: -3px;
+      margin-right: 20rpx;
+    }
+  }
+  .info-list {
+    padding: 0 30rpx;
+    background-color: #fff;
+  }
+  .dark {
+    background: #666!important;
+  }
+  .info-li {
+    border-bottom: 1rpx solid $light;
+    height: 90rpx;
+    line-height: 44rpx;
+    padding: 23rpx 0;
+    display: flex;
+    font-size: $text-nm;
+    color: $dark;
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+  .fixed-bottom {
+    @include fj;
+    width: 100%;
+    height: 90rpx;
+    line-height: 90rpx;
+    align-items: center;
+    background-color: #fff;
+    padding-left:30rpx;
+    padding-right:30rpx;
+    left: 0;
+    z-index: 100;
+    .ctrl-btn{
+      font-size:28rpx;
+      color: $primary;
+      border: 1rpx solid $primary;
+      border-radius: 60rpx;
+      width: 128rpx;
+      height:60rpx;
+      line-height:60rpx;
+      text-align: center;
+    }
+  }
+
+</style>

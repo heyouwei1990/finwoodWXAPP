@@ -1,0 +1,314 @@
+<template>
+  <view class="home-page">
+    <navigator class="searchbox" hover-class="none" url="../store/search">
+      <view class="input-div">
+        <icon class="iconfont icon-fangdajing"></icon>
+        <view class="span-val">请输入品牌/品种/商家</view>
+      </view>
+    </navigator>
+    <swiper class="swiper-wrap"
+      indicator-dots="true"
+      indicator-color="rgba(255,255,255,0.6)"
+      indicator-active-color="rgba(255,255,255,1)"
+      autoplay="true"
+      interval="3000">
+      <block>
+        <swiper-item wx:for="{{banners}}" wx:key="{{index}}">
+          <image src='{{item.text}}' @tap="open({{index}});"></image>
+        </swiper-item>
+      </block>
+    </swiper>
+    <view class='module-nav'>
+      <navigator class='module-nav-item' hover-class="none" open-type="switchTab" url="../store/index">
+        <icon class='iconfont icon-maihuo'></icon>
+        <text>买现货</text>
+      </navigator>
+      <!-- <navigator class='module-nav-item' hover-class="none" url="../hotbuy/requirement">
+        <icon class='iconfont icon-faqiugou'></icon>
+        <text>发求购</text>
+      </navigator>
+      <navigator class='module-nav-item' hover-class="none" url="./market">
+        <icon class='iconfont icon-kanhangqin'></icon>
+        <text>看行情</text>
+      </navigator> -->
+      <navigator class='module-nav-item' hover-class="none" url="./finance">
+        <icon class='iconfont icon-zijin'></icon>
+        <text>找资金</text>
+      </navigator>
+    </view>
+    <view class='sec-cut'></view>
+    <!-- <button open-type="contact" >客服</button> -->
+    <!-- <view class='tab-hd'>
+      <view class="tab-hd-item {{tabSelect==0?'active':''}}" @tap='selectSort(0);'>最新现货</view>
+      <view class="tab-hd-item {{tabSelect==1?'active':''}}" @tap='selectSort(1);'>最新求购</view>
+    </view> -->
+    <block class='tab-bd'>
+      <view class="tab-bd-item {{tabSelect==0?'active':''}}">
+        <view class='goods-list' wx:if="{{lastestProduct.length>0}}">
+          <navigator class='goods-li' hover-class="none"
+          url="../store/detail?pkid={{item.pkid}}"
+          wx:for="{{lastestProduct}}" wx:key="{{index}}">
+            <view class='goods-dl'>
+              <view class='goods-dt'>
+                <image src='{{item.imageUrl}}' @error="errorimg" data-errorimg="{{index}}"></image>
+              </view>
+              <view class='goods-dd'>
+                <text class='desc'>{{item.productName}}</text>
+                <view class='seller'>
+                  <text>{{item.shopName}}</text>
+                  <icon class='iconfont icon-renzheng'></icon>
+                </view>
+                <view class='li-bottom'>
+                  <text class='price' wx:if="{{item.salesPrice==0}}">面议</text>
+                  <text class='price' wx:if="{{item.salesPrice!=item.salesPriceUpper && item.salesPrice!=0}}">￥{{item.salesPrice}}~{{item.salesPriceUpper}}</text>
+                  <text class='price' wx:if="{{item.salesPrice==item.salesPriceUpper && item.salesPrice!=0}}">￥{{item.salesPrice}}</text>
+                  <text class='time'>{{item.lastModifiedTime}}</text>
+                </view>
+              </view>
+            </view>
+          </navigator>
+        </view>
+        <!--加载更多时动画-->
+        <bottomLoadMore :show.sync="showLoading" message="加载中..."></bottomLoadMore>
+        <!--暂无数据显示-->
+        <noMore :show.sync="is_noMore" message="没有更多数据了"></noMore>
+      </view>
+      <view class="tab-bd-item {{tabSelect==1?'active':''}}">
+        <view class='botbuy-list'>
+          <view class='hotbuy-li' wx:for="{{lastestInquiry}}" wx:key="{{index}}">
+            <view class='hotbuy-item'>
+              <view class='hotbuy-left'>
+                <view class="goods-name">{{item.varietyName}}</view>
+                <view>交 货 地：{{item.deliveryAddress}}</view>
+                <view>发布时间：{{item.lastModifiedTime}}</view>
+                <view>求购数量：{{item.quantity}} {{item.unitName}}</view>
+              </view>
+              <view class='hotbuy-right'>
+                <view class='status'>交易中</view>
+                <view class='price'>{{item.purchasePrice}}元/m³</view>
+                <view class='price'>面议</view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </block>
+    <!-- <calc :list.sync="calcList"></calc> -->
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import data_api from "../../api/data_module"
+  import { SEARCH_KEY, GLOBAL_INFO } from '../../utils/Constant'
+  import BottomLoadMore from "../../components/bottomLoadMore"
+  import NoMore from "../../components/noMore"
+  import calc from "../../components/calc"
+
+  export default class Home extends wepy.page {
+    config = {
+      navigationBarTitleText: '芬木网',
+      enablePullDownRefresh:true
+    };
+    components = {
+      bottomLoadMore: BottomLoadMore,
+      noMore: NoMore,
+      calc
+    };
+    //分享
+    onShareAppMessage (res) {
+      return {
+        title: '芬木网，买卖木材更轻松',
+        //imageUrl: wepy.getStorageSync(GLOBAL_INFO).logoUrl,
+        path: '/pages/home/index',
+        success(res) {
+          // 转发成功
+        },
+        fail(res) {
+          // 转发失败
+        }
+      }
+    };
+    data={
+      tabSelect:0,   //0为最新现货，1为最新求购
+      banners:[],     //首页轮播
+      lastestProduct:[],    //最新现货
+      lastestInquiry:[],    //最新求购
+      product_pageIndex:1,    //最新现货分页
+      product_pageCount:1,
+      showLoading:true,
+      is_noMore:false,
+      calcList:[{
+        title:'材积计算',
+        icon:'icon-jisuanqi',
+        link:'/pages/home/volume'
+      }]
+    };
+    async onLoad() {
+      await this.load();
+    };
+    async onShow() {
+      wepy.removeStorageSync(SEARCH_KEY);
+      //回到顶部
+      // wx.pageScrollTo({
+      //   scrollTop: 0
+      // })
+    }
+    load() {
+      this.getHomedata();
+    };
+
+    //获取banner等
+    async getHomedata() {
+      let r = await data_api.homedata();
+      this.banners=r.result.banners;
+      //this.lastestProduct=r.result.lastestProduct;
+      //this.lastestInquiry=r.result.lastestInquiry;
+      this.$apply();
+      setTimeout(() => {
+        this.getProduct();
+      },);
+    }
+
+    //获取最新现货
+    async getProduct() {
+      this.showLoading=true;
+      this.is_noMore = false
+      let r = await data_api.lastestproduct({
+        pageIndex:this.product_pageIndex
+      })
+      this.showLoading=false;
+      this.product_pageIndex=r.result.paging.pageIndex;
+      if(r.result.paging.pageCount != 0) {
+        this.product_pageCount=r.result.paging.pageCount;
+      }
+      if(this.product_pageIndex>1) {
+        this.lastestProduct=this.lastestProduct.concat(...r.result.list);
+      }else {
+        this.lastestProduct=r.result.list;
+      }
+      if(this.product_pageIndex>=this.product_pageCount){
+        this.is_noMore=true;
+      }
+      this.$apply();
+    }
+
+    async onPullDownRefresh () {
+      this.product_pageIndex = 1;
+      this.lastestProduct = [];
+      await this.load();
+      wepy.stopPullDownRefresh();
+    };
+
+    async onReachBottom() {
+      if(!this.is_noMore) {
+        this.product_pageIndex++;
+        this.getProduct();
+      }
+    }
+
+    methods={
+      open(index) {
+        if(index == 1) {
+          wx.switchTab({
+            url:'../store/index'
+          })
+        }
+        if(index == 2) {
+          this.$navigate('./finance');
+        }
+      },
+      selectSort (index) {
+        if (this.tabSelect == index){
+          return;
+        }
+        this.tabSelect=index;
+      },
+      errorimg(e){
+        let index= e.target.dataset.errorimg //获取循环的下标
+        this.lastestProduct[index].imageUrl="../../images/nopic.jpg";
+      }
+    };
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/search";
+  @import "../../styles/components/goods-list";
+  @import "../../styles/components/hotbuy-list";
+  .home-page {
+    .swiper-wrap{
+      height: 275rpx;
+      width: 100%;
+      background-color: #f8f8f8;
+    }
+    .swiper-wrap image{
+      width: 100%;
+      height: 275rpx;
+    }
+    .module-nav{
+      background-color: #fff;
+      width: 100%;
+      min-height: 186rpx;
+      display: flex;
+      justify-content: space-around;
+      padding: 20rpx 30rpx 12rpx;
+    }
+    .module-nav-item{
+      text-align: center;
+      background-color: #fff;
+    }
+    .module-nav-item icon{
+      border-radius: 50%;
+      display: block;
+      text-align: center;
+      box-sizing: border-box;
+      font-size: 108rpx;
+      margin-bottom: 8rpx;
+    }
+    .module-nav-item text{
+      font-size: $text-sm;
+      line-height: 40rpx;
+      display: block;
+    }
+    .module-nav-item:first-child icon{
+      color: #43c753;
+    }
+    // .module-nav-item:nth-child(2) icon{
+    //   color: #2dc4e4;
+    // }
+    // .module-nav-item:nth-child(3) icon{
+    //   color: #908bff;
+    // }
+    .module-nav-item:nth-child(2) icon{
+      color: #fe6f4e;
+    }
+
+    .tab-hd{
+      width: 100%;
+      overflow: hidden;
+      height: 91rpx;
+      background-color: #fff;
+      border-bottom: 1rpx solid $light;
+    }
+    .tab-hd-item{
+      float: left;
+      width: 100%;
+      text-align: center;
+      line-height: 90rpx;
+      font-size: $text-xl;
+      color: $dark;
+    }
+    .tab-hd-item.active{
+      color: #13ae2f;
+    }
+    .tab-bd-item{
+      display: none;
+    }
+    .tab-bd-item.active{
+      display: block;
+    }
+
+  }
+</style>

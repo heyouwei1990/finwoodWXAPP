@@ -1,0 +1,90 @@
+<template>
+  <view class="personalAccount-page">
+    <view class="list_item">
+      <view class="title">个体户</view>
+      <view class="input">
+        <radio-group class="radio-group" bindchange="radioChange">
+          <label class="radio" wx:for="{{radios}}"  wx:key="{{index}}">
+            <radio value="{{item.name}}" checked="{{item.checked}}"/>{{item.value}}
+          </label>
+        </radio-group>
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">真实姓名</view>
+      <view class="input">
+        <input type="text" placeholder="请输入您的真实姓名" value="张三" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">手机号码</view>
+      <view class="input">
+        <input type="text" placeholder="请输入您的手机号码" value="" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">身份证号</view>
+      <view class="input">
+        <input type="text" placeholder="请输入您的身份证号" value="" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">用户省份</view>
+      <view class="input">
+        <input type="text" placeholder="请选择" value="" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">用户地区</view>
+      <view class="input">
+        <input type="text" placeholder="请选择" value="" />
+      </view>
+    </view>
+    <view class="list_item" wx:if="radios.name==0">
+      <view class="title">住址</view>
+      <view class="input">
+        <input type="text" placeholder="请输入居住地址" value="" />
+      </view>
+    </view>
+    <view class="list_item" wx:if="radios.name==0">
+      <view class="title">职业</view>
+      <view class="input">
+        <input type="text" placeholder="请输入个人职业" value="" />
+      </view>
+    </view>
+    <view class="upload" wx:if="radios.name==0">
+      <view class="title"><i>*</i>图片信息 <text class="upload-tip">需加盖公司红章，支持1MB以内jpg，png，bmp</text></view>
+      <view class="img">
+        <image src="../../../images/upload/business.png"></image>
+      </view>
+    </view>
+    <button class="greenBtn">提交审核</button>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class PersonalAccount extends wepy.page {
+    config = {
+      navigationBarTitleText: '个人开户'
+    };
+    data={
+      radios:[
+        {name: '0', value: '是'},
+        {name: '1', value: '否',},
+      ]
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/mixin";
+  @import "../../../styles/components/list-item";
+  .upload-tip{
+    display: inline-block;
+    font-size:$text-xs;
+    color: $danger;
+    margin-left:10rpx;
+  }
+</style>

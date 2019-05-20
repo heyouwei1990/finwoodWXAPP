@@ -1,0 +1,66 @@
+<template>
+  <view class="accountInfo">
+    <picker range="{{array}}" bindchange="bindPickerChange();" bindtap="selectSort(0);">
+      <view class="list_item">
+        <view class="title">银行名称</view>
+        <view class="input">
+          <input type="text" placeholder="请选择" value="" />
+        </view>
+        <icon class="iconfont icon-jiantouyou"></icon>
+      </view>
+    </picker>
+    <view class="list_item">
+      <view class="title">银行账户名</view>
+      <view class="input">
+        <input type="text" placeholder="请输入银行账户名" value="" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">银行账号</view>
+      <view class="input">
+        <input type="text" placeholder="请输入银行账号" value="" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">支行名称</view>
+      <view class="input">
+        <input type="text" placeholder="请输入支行名称" value="" />
+      </view>
+    </view>
+    <picker range="{{array}}" bindchange="bindPickerChange();" bindtap="selectSort(0);">
+      <view class="list_item">
+        <view class="title">开户省份</view>
+        <view class="input">
+          <input type="text" placeholder="请选择" value="" />
+        </view>
+        <icon class="iconfont icon-jiantouyou"></icon>
+      </view>
+    </picker>
+    <picker range="{{array}}" bindchange="bindPickerChange();" bindtap="selectSort(0);">
+      <view class="list_item">
+        <view class="title">开户地区</view>
+        <view class="input">
+          <input type="text" placeholder="请选择" value="" />
+        </view>
+        <icon class="iconfont icon-jiantouyou"></icon>
+      </view>
+    </picker>
+    <button class="greenBtn">保存</button>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class AccountInfo extends wepy.page {
+    config = {
+      navigationBarTitleText: '开户信息'
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/mixin";
+  @import "../../../styles/components/list-item";
+
+</style>

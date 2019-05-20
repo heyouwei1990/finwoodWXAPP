@@ -1,0 +1,244 @@
+<template>
+  <view class="hotbuy-page">
+    <view class="searchbox">
+      <view class="input-div">
+        <icon class="iconfont icon-fangdajing"></icon>
+        <input type="text" @input="input" value="{{input.key}}" id="key" @confirm="submit" confirm-type="search" placeholder-class="placeholder" placeholder="请输入品种/交货地">
+        <!--<view class="span-val">请输入品牌/品种/商家</view>-->
+        <icon wx:if="{{input.key != ''}}" @tap="clear" class="iconfont icon-shanchu"></icon>
+      </view>
+    </view>
+    <view class="tab-hd">
+      <view class="tab-hd-item {{selected==item.value?'active':''}}" @tap="select({{item.value}})" wx:for="{{tabItem}}" wx:key="{{index}}">{{item.text}}</view>
+      <!--<view class="tab-hd-item">原木</view>-->
+      <!--<view class="tab-hd-item">方材</view>-->
+    </view>
+    <view class="botbuy-list">
+      <navigator url="./requireDetail?pkid={{item.pkid}}&unitName={{item.unitName}}" hover-class="none" class="hotbuy-li" wx:for="{{items}}" wx:key="{{index}}">
+        <view class="hotbuy-item">
+          <view class="hotbuy-left">
+            <view class="goods-name">{{item.varietyName}}</view>
+            <view>交 货 地：{{item.deliveryAddress}}</view>
+            <view>发布时间：{{item.lastModifiedTime}}</view>
+            <view>求购数量：{{item.quantity}} {{item.unitName}}</view>
+          </view>
+          <view class="hotbuy-right">
+            <view class="status {{item.status==2?'finish':''}}">{{item.statusName}}</view>
+            <view class="price" wx:if="{{item.purchasePrice!=0}}">{{item.purchasePrice}}元/m³</view>
+            <view class="price" wx:if="{{item.purchasePrice==0}}">面议</view>
+          </view>
+        </view>
+      </navigator>
+    </view>
+    <view class="no-data" wx:if="{{items.length==0&&ajax}}">
+      <image  src="../../../images/nodata/noStore.png" mode="aspectFit"></image>
+      <view class="descp">当前没有您搜索的求购</view>
+       <navigator hover-class="none" class="goto" open-type="switchTab" url="/pages/publish/index">快去查看其它求购</navigator>
+    </view>
+    <!--加载更多时动画-->
+    <bottomLoadMore :show.sync="showLoading" message="加载中..."></bottomLoadMore>
+    <!--暂无数据显示-->
+    <noMore :show.sync="is_noMore" message="没有更多数据了"></noMore>
+    <navigator url="./requirement" hover-class="none" class="btn-publish">发布新的求购</navigator>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import input from '../../mixins/input'
+  import data_api from "../../api/data_module"
+  import BottomLoadMore from "../../components/bottomLoadMore"
+  import NoMore from "../../components/noMore"
+  import Tips from '../../utils/Tips'
+  import Toast from '../../components/toast'
+
+  export default class HotBuy extends wepy.page {
+    config = {
+      navigationBarTitleText: '热门求购'
+    };
+    components = {
+      bottomLoadMore: BottomLoadMore,
+      noMore: NoMore,
+      toast:Toast
+    };
+    mixins=[input];
+    data={
+      input:{
+        key:'',
+      },
+      tabItem:[
+        {
+          text:'全部',
+          value:-1
+        },
+        {
+          text:'原木',
+          value:1
+        },
+        {
+          text:'板材',
+          value:2
+        }
+      ],
+      selected:-1,
+      items: [], //求购列表
+      pageIndex:1,  //当前页码
+      pageCount:1,  //总页码
+      showLoading:true,
+      is_noMore:false,
+      ajax:false
+    };
+    onLoad() {
+      this.load();
+    };
+
+    async load() {
+      this.showLoading=true;
+      this.is_noMore=false;
+      this.ajax=false;
+      /*if(wepy.getStorageSync(SEARCH_KEY)!= null || wepy.getStorageSync(SEARCH_KEY)!= '') {
+        this.key = wepy.getStorageSync(SEARCH_KEY);
+      }*/
+      let r = await data_api.searchinquiry({
+        searchKey:this.input.key,
+        pageIndex:this.pageIndex,
+        //originZoneId:Number(this.selected)
+      });
+      this.showLoading=false;
+      if(this.pageIndex>1) {
+        this.items=this.items.concat(...r.result.list);
+      }else {
+        this.items=r.result.list;
+      }
+      this.pageIndex=r.result.paging.pageIndex;
+      if(r.result.paging.pageCount != 0) {
+        this.pageCount=r.result.paging.pageCount;
+      }
+      if(this.pageIndex>=this.pageCount) {
+        this.is_noMore=true;
+      }
+      if(this.items.length==0){
+        this.is_noMore=false;
+        this.showLoading=false;
+      }
+      this.ajax=true;
+      this.$apply();
+    };
+    //下拉刷新
+    async onPullDownRefresh () {
+      if(this.items.length == 0) {
+        wepy.stopPullDownRefresh();
+        return;
+      }
+      this.pageIndex=1;
+      this.items = [];
+      wepy.removeStorageSync(SEARCH_KEY);
+      this.key = null;
+      await this.load();
+      wepy.stopPullDownRefresh();
+    };
+
+    //上拉加载
+    async onReachBottom() {
+      if(!this.is_noMore && this.items.length >0) {
+        this.pageIndex++;
+        this.load();
+      }
+    };
+    methods={
+      //tab筛选
+      select(value){
+        this.selected=value;
+      },
+      //提交搜索
+      submit(){
+        this.load();
+      },
+      //清空搜索内容
+      clear(){
+        this.input.key='';
+        this.load();
+      }
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/search";
+  @import "../../styles/components/hotbuy-list";
+  .hotbuy-page {
+    padding-bottom:90rpx;
+    padding-top:180rpx;
+    .tab-hd{
+      width: 100%;
+      height:90rpx;
+      position: fixed;
+      left:0;
+      top:90rpx;
+      background-color: #fff;
+      border-bottom:1rpx solid $light;
+      display: flex;
+      justify-content:space-between;
+      align-items: flex-end;
+      padding-left:30rpx;
+      padding-right:30rpx;
+    }
+    .tab-hd-item{
+      font-size:$text-nm;
+      color: $dark;
+      line-height:86rpx;
+      border-bottom:4rpx solid transparent;
+    }
+    .tab-hd-item.active{
+      color: $primary;
+      border-bottom:4rpx solid $primary;
+    }
+    .searchbox{
+      width: 100%;
+      height:90rpx;
+      position: fixed;
+      left:0;
+      top:0;
+      z-index:10;
+    }
+    .input-div{
+      padding-right:80rpx;
+    }
+    .input-div input{
+      height:70rpx;
+      line-height:70rpx;
+      color: $dark;
+    }
+    .icon-shanchu{
+      position: absolute;
+      right: 0;
+      top:50%;
+      z-index:2;
+      transform: translateY(-50%);
+      font-size:32rpx;
+      color: #ccc;
+      line-height:68rpx;
+      width: 80rpx;
+      text-align: center;
+    }
+    .status{
+      color: $primary;
+    }
+    .status.finish{
+      color: $secondary;
+    }
+    .btn-publish{
+      width: 100%;
+      height:90rpx;
+      line-height:90rpx;
+      text-align: center;
+      background-color: $primary;
+      color: #fff;
+      font-size:$text-xl;
+      position: fixed;
+      left:0;
+      bottom:0;
+    }
+  }
+</style>

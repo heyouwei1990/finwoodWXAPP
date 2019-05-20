@@ -1,0 +1,84 @@
+<template>
+  <view class="page-accountEdit">
+    <view class="list_item">
+      <view class="title"><i>*</i>手机号码：</view>
+      <view class="input">
+        <input type="number" maxlength="11" @input="input" placeholder="请输入新成员手机号码" id="phone" value="{{input.phone}}" />
+      </view>
+    </view>
+    <button class="greenBtn" @tap="save">保存</button>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import { TOKEN } from '../../../utils/Constant'
+  import Toast from '../../../components/toast'
+  import input from '../../../mixins/input'
+  import validate from '../../../utils/Validate'
+  import member_api from "../../../api/member_module"
+
+  export default class HotBuy extends wepy.page {
+    config = {
+      navigationBarTitleText: '添加账号'
+    };
+    mixins=[input];
+    components={
+      toast:Toast
+    }
+    data={
+      token:'',
+      input:{
+        phone:''
+      }
+    };
+    onShow(){
+      this.token=wepy.getStorageSync(TOKEN);
+    };
+    methods={
+      async save(){
+        if(!this.validate()){
+          return;
+        }
+        let r=await member_api.shopmemberadd({
+          token:this.token,
+          mobile:this.input.phone
+        })
+        if(r){
+          wepy.navigateBack();
+        }
+      },
+    };
+    validate(){
+      let rules=[
+        {
+          value: this.input.phone,
+          method: 'optional',
+          message: '请输入新成员手机号码'
+        },
+        {
+          value: this.input.phone,
+          method: 'tel',
+          message: '手机号码不正确'
+        },
+      ]
+      return this.check(rules);
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/mixin";
+  @import "../../../styles/components/list-item";
+  .greenBtn{
+    display: block;
+    background-color: $primary;
+    color: #fff;
+    margin: 40rpx 30rpx;
+    font-size:$text-xl;
+    height:90rpx;
+    line-height:90rpx;
+    text-align: center;
+    border-radius: 8rpx;
+  }
+</style>

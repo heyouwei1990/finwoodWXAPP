@@ -1,0 +1,68 @@
+<template>
+  <view class="corporateAccount">
+    <view class="list_item">
+      <view class="title">企业名称</view>
+      <view class="input">
+        <input type="text" placeholder="请输入企业名称" value="" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">企业固话</view>
+      <view class="input">
+        <input type="text" placeholder="格式021-12345678" value="" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">企业经营地址</view>
+      <view class="input">
+        <input type="text" placeholder="请输入企业经营地址" value="" />
+      </view>
+    </view>
+    <navigator class="list_item" url="./corporationInfo">
+      <view class="title">法人信息</view>
+      <view class="input"></view>
+      <icon class="iconfont icon-jiantouyou"></icon>
+    </navigator>
+    <navigator class="list_item" url="./accountInfo" >
+      <view class="title">开户信息</view>
+      <view class="input"></view>
+      <icon class="iconfont icon-jiantouyou"></icon>
+    </navigator>
+    <navigator class="list_item" url="./shareholdersInfo">
+      <view class="title">股东信息</view>
+      <view class="input"></view>
+      <icon class="iconfont icon-jiantouyou"></icon>
+    </navigator>
+    <view class="upload" wx:if="radios.name==0">
+      <view class="title"><i>*</i>图片信息 <text class="upload-tip">需加盖公司红章，支持1MB以内jpg，png，bmp</text></view>
+      <view class="img">
+        <image src="../../../images/upload/bank.png"></image>
+        <image src="../../../images/upload/proxy.png"></image>
+        <image src="../../../images/upload/IDcard1.png"></image>
+        <image src="../../../images/upload/IDcard2.png"></image>
+      </view>
+    </view>
+    <button class="greenBtn">提交审核</button>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class CorporateAccount extends wepy.page {
+    config = {
+      navigationBarTitleText: '企业开户'
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/mixin";
+  @import "../../../styles/components/list-item";
+  .upload-tip{
+    display: inline-block;
+    font-size:$text-xs;
+    color: $danger;
+    margin-left:10rpx;
+  }
+</style>

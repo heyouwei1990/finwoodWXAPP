@@ -1,0 +1,356 @@
+<template>
+  <view class="order-page">
+    <navigator class="address"
+    wx:if="{{selectAddress.value == 2 && address != ''}}"
+    hover-class="none"
+    url="/pages/user/buyer/address?select=1">
+      <icon class="iconfont icon-dizhi1"></icon>
+      <view class="flex1">
+        <view class="top">
+          <text class="contacts">收货人：{{address.consignee}}</text>
+          <text class="tel">{{address.consigneeMobile}}</text>
+        </view>
+        <view class="addr">收货地址：{{address.provinceName}}{{address.cityName}}{{address.address}}</view>
+      </view>
+      <icon class="iconfont icon-jiantouyou"></icon>
+    </navigator>
+    <view class="address" wx:if="{{selectAddress.value == 1}}">
+      <icon class="iconfont icon-dizhi1"></icon>
+      <view class="flex1">
+        <view class="top">
+          <text class="contacts">卖家联系人：{{sellerCompanyName}}</text>
+          <text class="tel">{{sellerMemberMobile}}</text>
+        </view>
+        <view class="addr">提货地址：{{warehouseAddress}}</view>
+      </view>
+    </view>
+    <view class="address" wx:if="{{selectAddress.value == 2 && address == ''}}">
+      <navigator class="btn-add-addr" hover-class="none" url="/pages/user/buyer/addAddress">添加收货地址</navigator>
+    </view>
+    <view class="sec-cut"></view>
+    <view class="order-wrap">
+      <view class="shop-name">{{sellerCompanyName}}</view>
+      <view class='goods-list'>
+        <view class='goods-li' wx:for="{{list}}" wx:key="{{index}}">
+          <view class='goods-dl'>
+            <view class='goods-dt'>
+              <image src='{{item.imageUrl}}'></image>
+            </view>
+            <view class='goods-dd'>
+              <text class='desc'>{{item.productName}}</text>
+              <view class='seller'>
+                <text>{{sellerCompanyName}}</text>
+                <icon class='iconfont icon-renzheng'></icon>
+              </view>
+              <view class='li-bottom'>
+                <text class='price'
+                wx:if="{{item.salesPriceUpper==item.salesPrice}}">￥{{item.salesPrice}}</text>
+                <text class='price'
+                wx:if="{{item.salesPriceUpper!=item.salesPrice}}">￥{{item.salesPrice}}~{{item.salesPriceUpper}}</text>
+                <text class='vol'>×{{item.quantity}}m³</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <picker range="{{array}}" @change="addressChange">
+      <view class="list_item">
+        <view class="title"><i>*</i>配送方式</view>
+        <view class="input tar">
+          <text>{{selectAddress.text}}</text>
+        </view>
+        <icon class="iconfont icon-jiantouyou"></icon>
+      </view>
+    </picker>
+    <view class="list_item">
+      <view class="title align-top">买家留言</view>
+      <view class="input">
+        <textarea maxlength="100" @input="input" id="comments" value="{{input.comments}}" placeholder="选填：对本次交易的说明（建议填写已和商家协商的内容,100字以内）"/>
+      </view>
+    </view>
+    <view class="fixed-bottom">
+      <view class="txt">合计金额：<text class="price">￥{{sumPrice}}</text></view>
+      <!-- <view class="txt flex1">预付金额：<text class="price">¥23000</text></view> -->
+      <view class="btn-submit" @tap="submit();">提交订单</view>
+    </view>
+    <toast />
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import order_api from '../../api/order_module'
+  import member_api from '../../api/member_module'
+  import { TOKEN, SELECT_ADDRESS } from "../../utils/Constant"
+  import input from '../../mixins/input'
+  import Toast from '../../components/toast'
+
+  export default class Order extends wepy.page {
+    config = {
+      navigationBarTitleText: '确认订单'
+    }
+    mixins = [input];
+    components = {
+      toast: Toast
+    };
+
+    data = {
+      list:[],
+      token:'',
+      type:'',
+      pkid:0,
+      quantity:0,
+      array:[
+        '上门自提',
+        '送货上门'
+      ],
+      selectAddress:{
+        text:'',
+        value:-1
+      },
+      address:'',
+      sellerCompanyName:'',
+      sellerMemberMobile:'',
+      warehouseAddress:'',
+      sumPrice:0,
+      input : {
+        comments:''
+      },
+      cartItem:''
+    }
+
+    onLoad(option) {
+      this.type = option.type;
+      if(option.pkid) {
+        this.pkid=Number(option.pkid);
+        this.quantity=Number(option.quantity);
+      }
+      if(option.cartIds) {
+        this.cartItem=option.cartIds;
+      }
+    }
+
+    onShow() {
+      this.token=wepy.getStorageSync(TOKEN);
+      if(this.type == 'cart') {
+        //来自购物车
+        this.settleinfo();
+      }else {
+        //来自立即购买
+        this.buynow();
+      }
+    }
+
+    async buynow() {
+      let r = await order_api.buynow({
+        productId:this.pkid,
+        quantity:this.quantity,
+        token: this.token
+      })
+      if(r.result.shippingAddress != null || r.result.shippingAddress != ''){
+        this.address=r.result.shippingAddress;
+      }
+      this.list=r.result.orderInfo.cartProductList;
+      this.sellerCompanyName=r.result.orderInfo.sellerCompanyName;
+      this.sellerMemberMobile=r.result.orderInfo.sellerMemberMobile;
+      this.warehouseAddress=r.result.orderInfo.warehouseAddress;
+      this.sumPrice=r.result.orderInfo.totalGoodsAmount;
+      this.getAddress();
+      this.$apply();
+    }
+
+    async settleinfo() {
+      let r = await order_api.settleinfo({
+        cartIds:this.cartItem,
+        token: this.token
+      })
+      if(r.result.shippingAddress != null || r.result.shippingAddress != ''){
+        this.address=r.result.shippingAddress;
+      }
+      this.list=r.result.orderInfo.cartProductList;
+      this.sellerCompanyName=r.result.orderInfo.sellerCompanyName;
+      this.sellerMemberMobile=r.result.orderInfo.sellerMemberMobile;
+      this.warehouseAddress=r.result.orderInfo.warehouseAddress;
+      this.sumPrice=r.result.orderInfo.totalGoodsAmount;
+      this.getAddress();
+      this.$apply();
+    }
+
+    //获取用户选中地址
+    getAddress() {
+      let selectAddress = wepy.getStorageSync(SELECT_ADDRESS);
+      if(selectAddress!=null && selectAddress!='') {
+        this.address=selectAddress;
+      }
+    }
+
+    computed = {
+      cartIds() {
+        let pkids=[];
+        for(let i=0;i<this.list.length;i++) {
+          pkids.push(this.list[i].pkid);
+        }
+        return pkids.join(",");;
+      }
+    }
+
+    methods = {
+      //选择配送方式
+      addressChange(e) {
+        this.selectAddress.text=this.array[e.detail.value];
+        this.selectAddress.value=Number(e.detail.value)+1;
+      },
+      //提交订单
+      async submit() {
+        let addressId = null;
+        if(this.selectAddress.value == -1) {
+          this.$invoke('toast', 'show', {
+            message:'请选择配送方式',
+          });
+          return;
+        }
+        if(this.selectAddress.value == 2 && this.address == '') {
+          this.$invoke('toast', 'show', {
+            message:'请先添加地址',
+          });
+          return;
+        }else {
+          addressId=this.address.pkid;
+        }
+        let r = await member_api.centerinfo({
+          token:this.token
+        });
+        if(!(r.result.isPersonalVerified==1 || r.result.isCompanyVerified == 1)) {
+          this.$invoke('toast', 'show', {
+            message:'请先完成个人实名认证或企业认证',
+          });
+          setTimeout(()=>{
+            this.$navigate(`/pages/user/userInfo`)
+          },1000)
+        }else {
+          let r =await order_api.confirmorder({
+            token:this.token,
+            cartIds:this.cartIds,
+            addressId:addressId,
+            deliveryType:this.selectAddress.value,
+            comments:this.input.comments
+          })
+          this.$navigate(`./pay?pkid=${r.result}&type=${this.type}`);
+        }
+      }
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/goods-list";
+  @import "../../styles/components/list-item";
+  .address{
+    background-color: #fff;
+    height:132rpx;
+    display: flex;
+    align-items: center;
+    padding:15rpx 30rpx;
+    .icon-dizhi1{
+      font-size:44rpx;
+      color: #666;
+    }
+    .flex1{
+      flex: 1;
+      overflow: hidden;
+      margin-left:20rpx;
+      margin-right:30rpx;
+      .top{
+        overflow: hidden;
+        line-height:44rpx;
+        color: $dark;
+        display: flex;
+        justify-content: space-between;
+      }
+      .contacts{
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size:$text-xl;
+      }
+      .tel{
+        font-size:$text-nm;
+        margin-left:30rpx;
+      }
+      .addr{
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size:$text-nm;
+        line-height:44rpx;
+        color: #666;
+      }
+    }
+    .icon-jiantouyou{
+      font-size:36rpx;
+      color: #999;
+    }
+  }
+  .btn-add-addr{
+    width: 270rpx;
+    height:80rpx;
+    line-height:80rpx;
+    text-align: center;
+    background-color: $primary;
+    font-size:$text-nm;
+    color: #fff;
+    margin: 0 auto;
+  }
+  .order-wrap{
+    background-color: #fff;
+    .goods-li:last-child{
+      border-bottom:1rpx solid $light;
+    }
+  }
+  .tar{
+    text-align: right;
+  }
+  .shop-name{
+    border-bottom:1rpx solid $light;
+    height:72rpx;
+    line-height:72rpx;
+    font-size:$text-nm;
+    color: $dark;
+    padding:0 30rpx;
+  }
+  .fixed-bottom{
+    @include fj;
+    z-index:100;
+    left:0;
+    padding-left:30rpx;
+    width: 100%;
+    height:98rpx;
+    align-items: center;
+    background-color: #fff;
+    line-height:98rpx;
+    .txt{
+      font-size:$text-nm;
+      color: $dark;
+      margin-right:20rpx;
+      white-space:nowrap;
+      overflow: hidden;
+    }
+    .flex1{
+      flex:1;
+    }
+    .price{
+      color: $danger;
+    }
+    .btn-submit{
+      width: 220rpx;
+      height:98rpx;
+      background-color: $danger;
+      color: #fff;
+      font-size:$text-nm;
+      text-align: center;
+    }
+  }
+</style>

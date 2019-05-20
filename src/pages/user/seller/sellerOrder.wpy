@@ -1,0 +1,236 @@
+<template>
+  <view class="sellerOrder-page">
+    <view class="tab-hd">
+      <view class="{{selected=='-1'?'tab-hd-item active':'tab-hd-item'}}" bindtap="selectRegion('-1')">全部</view>
+      <view class="{{selected=='1'?'tab-hd-item active':'tab-hd-item'}}" bindtap="selectRegion('1')">未付款</view>
+      <view class="{{selected=='2'?'tab-hd-item active':'tab-hd-item'}}" bindtap="selectRegion('2')">已付全款</view>
+      <view class="{{selected=='3'?'tab-hd-item active':'tab-hd-item'}}" bindtap="selectRegion('3')">已发货</view>
+      <view class="{{selected=='4'?'tab-hd-item active':'tab-hd-item'}}" bindtap="selectRegion('4')">交易完成</view>
+    </view>
+    <view class="order-list">
+      <view class="order-li" wx:for="{{items}}" wx:key="{{index}}">
+        <navigator class="top" hover-class="none" url="./sellerOrderDetail?pkid={{item.detail.pkid}}">
+          <view class="flex1">
+            <view class="orderNo">订单号：{{item.detail.orderNo}}</view>
+            <view class="time">{{item.detail.createdTime}}</view>
+          </view>
+          <view wx:if="{{item.detail.status==1}}" class="status">待付款</view>
+          <view wx:if="{{item.detail.status==2}}" class="status">已付定金</view>
+          <view wx:if="{{item.detail.status==3}}" class="status">已付全款</view>
+          <view wx:if="{{item.detail.status==4}}" class="status">已发货</view>
+          <view wx:if="{{item.detail.status==5}}" class="status">交易完成</view>
+          <view wx:if="{{item.detail.status==6}}" class="status">退款中</view>
+          <view wx:if="{{item.detail.status==7}}" class="status">已退款</view>
+          <view wx:if="{{item.detail.status==8}}" class="status">已取消</view>
+        </navigator>
+        <view class='goods-list' >
+          <navigator class='goods-li' hover-class="none" url="./sellerOrderDetail?pkid={{item.detail.pkid}}" wx:for="{{item.orderItemList}}" wx:key="idx" wx:for-index="idx" wx:for-item="value">
+            <view class='goods-dl'>
+              <view class='goods-dt'>
+                <image src="{{value.productImgUrl}}" @error="binderrorimg" data-idx="{{idx}}" data-index="{{index}}"></image>
+              </view>
+              <view class='goods-dd'>
+                <text class='desc'>{{value.originName}}{{value.gradeName}}{{value.varietyName}}{{value.specification}}</text>
+                <view class="size">
+                  <text class='flex1'>规格：{{value.specification}}</text>
+                  <icon
+                    wx:if="{{item.detail.status==1}}"
+                    class="iconfont icon-bianji"
+                    @tap.stop="revise({{item.detail.pkid}},{{value.salesPrice}},{{value.quantity}},{{value.unitText}},{{value.productStockNum}},{{value.pkid}})"
+                  ></icon>
+                </view>
+                <view class='li-bottom'>
+                  <text class='price'>￥{{value.salesPrice}}</text>
+                  <view class='vol'>x {{value.quantity}} {{value.unitText}}</view>
+                </view>
+              </view>
+            </view>
+          </navigator>
+        </view>
+        <navigator class="total" hover-class="none" url="./sellerOrderDetail?pkid={{item.detail.pkid}}">
+          共{{item.orderItemList.length}}件商品 合计：￥{{item.detail.goodsAmount}}  预付：￥{{item.detail.goodsAmount*item.detail.advanceRatio/100}}
+        </navigator>
+        <view class="bottom">
+          <view class="flex1 seller-name">买家：{{item.detail.buyerCompanyName}}</view>
+          <view wx:if="{{item.detail.status==1}}" @tap.stop="removeOrder({{item.detail.pkid}},{{index}})" class="btn-gray">取消订单</view>
+          <view wx:if="{{item.detail.status==2}}" @tap.stop="makePhoneCall" class="btn-gray">联系客服</view>
+          <view wx:if="{{item.detail.status==3}}" @tap.stop="deliver({{item.detail.pkid}})" class="btn-red">确认发货</view>
+        </view>
+      </view>
+      <!--加载更多时动画-->
+      <bottomLoadMore :show.sync="showLoading" message="加载中..."></bottomLoadMore>
+      <!--暂无数据显示-->
+      <noMore :show.sync="is_noMore" message="没有更多数据了"></noMore>
+      <view wx:if="{{items.length==0&&ajax}}" class="no-data">
+        <image  src="../../../images/nodata/noOrder.png" mode="aspectFit"></image>
+        <view class="descp">您的订单是空的</view>
+        <navigator hover-class="none" class="goto" open-type="switchTab" url="/pages/store/index">快去逛逛吧</navigator>
+      </view>
+    </view>
+
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import BottomLoadMore from "../../../components/bottomLoadMore"
+  import NoMore from "../../../components/noMore"
+  import order_api from "../../../api/order_module"
+  import { TOKEN } from "../../../utils/Constant"
+  import Tips from "../../../utils/Tips"
+
+  export default class SellerOrder extends wepy.page {
+    config = {
+      navigationBarTitleText: '我的订单',
+      enablePullDownRefresh:true
+    };
+    components = {
+      bottomLoadMore: BottomLoadMore,
+      noMore: NoMore
+    };
+
+    data={
+      token:'',
+      selected:'-1', //当前默认全部订单
+      items: [], //订单列表
+      pageIndex:1,  //当前页码
+      pageCount:1,  //总页码
+      showLoading:true,
+      is_noMore:false,
+      ajax:false
+    };
+
+    onShow(){
+      this.token=wepy.getStorageSync(TOKEN);
+      this.items = [], //订单列表
+      this.pageIndex = 1,  //当前页码
+      this.pageCount = 1,  //总页码
+      this.load();
+    }
+
+    async load(){
+      this.showLoading=true;
+      this.is_noMore=false,
+      this.ajax=false;
+      let orderStatus='-1';
+      switch(this.selected){
+        case '-1':
+          orderStatus = '-1';
+          break;
+        case '1':
+          orderStatus = '1,2';
+          break;
+        case '2':
+          orderStatus = '3';
+          break;
+        case '3':
+          orderStatus = '4';
+          break;
+        case '4':
+          orderStatus = '5';
+          break;
+        default:
+          break;
+      }
+      let r=await order_api.listorders({
+        token:this.token,
+        memberType:2,
+        orderStatus:orderStatus,
+        pageIndex:this.pageIndex
+      })
+      this.showLoading=false;
+      if(this.pageIndex>1){
+        this.items=this.items.concat(...r.result.list);
+      }else{
+        this.items=r.result.list;
+      }
+      this.pageIndex=r.result.paging.pageIndex;
+      this.pageCount=r.result.paging.pageCount;
+      if(this.pageIndex>=this.pageCount){
+        this.is_noMore=true;
+      }
+      if(this.items.length==0){
+        this.is_noMore=false;
+        this.showLoading=false;
+      }
+      this.ajax=true;
+      this.$apply();
+    };
+    //下拉刷新
+    async onPullDownRefresh () {
+      if(this.items.length == 0) {
+        wepy.stopPullDownRefresh();
+        return;
+      }
+      this.pageIndex=1;
+      this.items=[];
+      await this.load();
+      wepy.stopPullDownRefresh();
+    };
+    async onReachBottom() {
+      if(this.items.length==0){
+        return;
+      }
+      if(!this.is_noMore) {
+        this.pageIndex++;
+        this.load();
+      }
+    };
+    methods={
+      //tab切换
+      selectRegion(value) {
+        if(this.selected==value) {
+          return;
+        }
+        this.pageIndex=1;
+        this.selected=value;
+        this.load();
+      },
+      //取消订单
+      async removeOrder(pkid,index){
+        Tips.confirm('是否取消订单').then(async ()=>{
+          let r = await order_api.cancel({
+            token:this.token,
+            pkid:pkid,
+            memberType:2
+          })
+          if(r) {
+            this.items[index].detail.status=8;
+            this.$apply();
+            Tips.success('取消成功！');
+          }
+        }).catch(()=>{
+
+        })
+      },
+      //修改订单
+      revise(orderId,salesPrice,quantity,unitText,productStockNum,pkid){
+        this.$navigate(`./reviseOrder?orderId=${orderId}&salesPrice=${salesPrice}&quantity=${quantity}&unitText=${unitText}&productStockNum=${productStockNum}&pkid=${pkid}`);
+      },
+      makePhoneCall() {
+        wepy.$instance.globalData.makePhoneCall();
+      },
+      //确认发货
+      deliver(pkid){
+        this.$navigate(`./deliverGoods?pkid=${pkid}`);
+      },
+      binderrorimg:(e)=>{
+        let index= e.target.dataset.index;
+        let idx= e.target.dataset.idx;
+        this.items[index].orderItemList[idx].productImgUrl="../../../images/nopic.jpg";
+      }
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/components/order-list";
+
+  .tab-hd{
+    z-index:12;
+  }
+  .no-data{
+    position: relative;
+    height:1134rpx;
+  }
+</style>

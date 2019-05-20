@@ -1,0 +1,115 @@
+<template>
+	<view class="swpy-tipbox-mask" :class="{swpy-tipbox-show:!!visible}">
+		<view class="swpy-tipbox" style="{{cssText}}">{{tip}}</view>
+	</view>
+</template>
+
+<script>
+import wepy from 'wepy';
+
+export default class Toast extends wepy.component {
+
+	data = {
+		visible: false,
+		position: '',
+		margin: '',
+		tip: ''
+	};
+
+	computed = {
+		cssText() {
+			let styles = {};
+			styles['align-self'] = 'initial';
+			styles['margin-top'] = 'initial';
+			styles['margin-bottom'] = 'initial';
+			if (this.position === 'top') {
+				styles['align-self'] = 'flex-start';
+				styles['margin-top'] = this.margin || '';
+			} else if (this.position === 'bottom') {
+				styles['align-self'] = 'flex-end'
+				styles['margin-bottom'] = this.margin || '';
+			}
+			let css = Object.keys(styles).map(
+				key => (key + ':' + styles[key])
+			).join(';');
+			return css;
+		}
+	};
+
+	show(options) {
+		let conf = Object.assign({
+      message:'提示文本',
+			position: 'bottom',
+      margin: '80px',   //离底部距离
+      during: 1200
+		}, options);
+
+		this.hide();
+		this.position = conf.position;
+		this.margin = conf.margin;
+
+		setTimeout(() => {
+			this.visible = true;
+			this.tip = conf.message;
+			this.$apply();
+		}, 20);
+
+		if (this.timer) {
+			clearTimeout(this.timer);
+			this.timer = null;
+		}
+		this.timer = setTimeout(() => this.hide(), conf.during);
+	}
+
+	hide() {
+		this.visible = false;
+		this.tip = '';
+		this.position = '';
+		this.margin = '';
+		this.$apply();
+	}
+}
+</script>
+
+<style lang="scss">
+  .swpy-tipbox-mask{
+    display: none;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    left:0;
+    top:0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    pointer-events: none;
+  }
+
+  .swpy-tipbox-show{
+    display: flex;
+  }
+
+  .swpy-tipbox{
+    flex: 0 0 auto;
+    opacity: 0;
+    max-width: 20rem;
+    overflow: hidden;
+    background-color: rgba(0,0,0,0.8);
+    padding: 10px 20px;
+    font-size: 14px;
+    line-height: 18px;
+    border: none;
+    color: #fff;
+    border-radius: 5px;
+    word-break: break-all;
+    animation: swpy-tipbox-fx 2s ease-in-out;
+  }
+
+  @keyframes swpy-tipbox-fx {
+    0% { opacity:0; transform:scale(1.5); }
+    10% { opacity:1; transform:scale(1); }
+    90% { opacity:1; transform:scale(1); }
+    100% { opacity:0; transform:scale(1); }
+  }
+</style>

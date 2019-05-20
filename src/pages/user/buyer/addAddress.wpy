@@ -1,0 +1,232 @@
+<template>
+  <view class="addAddress-page">
+    <view class="list_item">
+      <view class="title"><i>*</i>收货人：</view>
+      <view class="input">
+        <input type="text" maxlength="10" @input="input" placeholder="请输入收货人姓名" id="name" value="{{input.name}}" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title"><i>*</i>联系方式：</view>
+      <view class="input">
+        <input type="number" maxlength="11" @input="input" placeholder="请输入手机号码" id="phone" value="{{input.phone}}" />
+      </view>
+    </view>
+    <picker range="{{provinceList}}" @change="provinceChange" range-key="text">
+      <view class="list_item">
+        <view class="title"><i>*</i>所在省：</view>
+        <view class="input">
+          <input type="text" disabled="true" placeholder="请选择" value="{{selectProvince.text}}" />
+        </view>
+        <icon class="iconfont icon-jiantouyou"></icon>
+      </view>
+    </picker>
+    <picker range="{{cityList}}" @change="cityChange" disabled="{{cityList.length == 0}}" @tap="tip();" range-key="text">
+      <view class="list_item">
+        <view class="title"><i>*</i>所在市：</view>
+        <view class="input">
+          <input type="text" disabled="true" placeholder="请选择" value="{{selectCity.text}}" />
+        </view>
+        <icon class="iconfont icon-jiantouyou"></icon>
+      </view>
+    </picker>
+    <view class="list_item">
+      <view class="title"><i>*</i>详细地址：</view>
+      <view class="input">
+        <input type="text" @input="input" placeholder="请输入街道、楼牌号等" id="details" value="{{input.details}}" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title"><i>*</i>设为默认：</view>
+      <view class="input">
+        <radio-group class="radio-group" @change="selectDefult">
+          <label class="radio" wx:for="{{radios}}"  wx:key="{{index}}">
+            <radio value="{{item.name}}" checked="{{item.checked}}"/>{{item.value}}
+          </label>
+        </radio-group>
+      </view>
+    </view>
+    <button class="greenBtn" @tap="submit();">保存</button>
+    <toast />
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import validate from '../../../utils/Validate'
+  import input from '../../../mixins/input'
+  import common_api from '../../../api/common_module'
+  import member_api from '../../../api/member_module'
+  import Tips from '../../../utils/Tips'
+  import { TOKEN } from "../../../utils/Constant";
+  import Toast from '../../../components/toast'
+
+  export default class AddAddress extends wepy.page {
+    config = {
+      navigationBarTitleText: '添加收货地址'
+    };
+    mixins = [input];
+    components = {
+      toast: Toast
+    };
+
+    data={
+      radios:[
+        {name: 1, value: '是',checked:true},
+        {name: 0, value: '否',checked:false},
+      ],
+      isDefault:1,
+      pkid:0,
+      input : {
+        name:'',
+        phone:'',
+        details:''
+      },
+      provinceList: [],
+      cityList: [],
+      selectProvince:{},
+      selectCity: {},
+      token:''
+    }
+
+    onLoad({pkid}) {
+      if(pkid) {
+        wepy.setNavigationBarTitle({
+          title: '编辑收货地址'
+        })
+        this.pkid=Number(pkid);
+      }
+    }
+
+    onShow() {
+      this.token=wepy.getStorageSync(TOKEN);
+      if(this.pkid != 0) {
+        this.shoppingaddrdetail();
+      }else {
+        this.listprovince();
+      }
+    }
+
+    //获取详情
+    async shoppingaddrdetail() {
+      let r = await member_api.shoppingaddrdetail({
+        token:this.token,
+        pkid:this.pkid
+      });
+      this.input.name=r.result.consignee;
+      this.input.phone=r.result.consigneeMobile;
+      this.isDefault=r.result.isDefault;
+      if(this.isDefault == 1) {
+        this.radios = [
+          {name: 1, value: '是',checked:true},
+          {name: 0, value: '否',checked:false}
+        ];
+      }else {
+        this.radios = [
+          {name: 1, value: '是',checked:false},
+          {name: 0, value: '否',checked:true}
+        ];
+      }
+
+      this.input.details=r.result.address;
+      this.selectProvince.text=r.result.provinceName;
+      this.selectProvince.value=r.result.provinceId;
+      this.selectCity.text=r.result.cityName;
+      this.selectCity.value=r.result.cityId;
+      this.listprovince();
+      this.listcity(r.result.provinceId);
+      this.$apply();
+    }
+
+    //获取省数据
+    async listprovince() {
+      let r = await common_api.listprovince();
+      this.provinceList = r.result;
+      this.$apply();
+    }
+
+    //获取市数据
+    async listcity(pkid) {
+      let r = await common_api.listcity({
+        provinceCode:String(pkid)
+      });
+      this.cityList = r.result;
+      this.$apply();
+    }
+
+    methods = {
+      //选择省
+      provinceChange(e) {
+        this.selectProvince = this.provinceList[e.detail.value];
+        let pkid = this.provinceList[e.detail.value].value;
+        this.cityList = [];
+        this.selectCity={};
+        this.listcity(pkid);
+      },
+      //选择市
+      cityChange(e) {
+        this.selectCity = this.cityList[e.detail.value];
+      },
+      tip() {
+        if(this.cityList.length == 0) {
+          Tips.alert('请先选择省!');
+        }
+      },
+      selectDefult(e) {
+        this.isDefault = Number(e.detail.value);
+      },
+      //保存
+      async submit() {
+        if (!this.validate()) {
+          return;
+        }
+        let r = await member_api.saveshoppingaddr({
+          token:this.token,
+          pkid:this.pkid,
+          provinceId:Number(this.selectProvince.value),
+          cityId:Number(this.selectCity.value),
+          address:this.input.details,
+          consignee:this.input.name,
+          consigneeMobile:this.input.phone,
+          isDefault:this.isDefault
+        })
+        if(r) {
+          Tips.success('保存成功!');
+          wepy.navigateBack();
+        }
+      }
+    };
+
+    validate() {
+      let rules = [
+        {
+          value: this.input.name,
+          method: 'optional',
+          message: '请输入收货人姓名'
+        },
+        {
+          value: this.input.phone,
+          method: 'optional',
+          message: '请输入联系方式'
+        },
+        {
+          value: this.input.phone,
+          method: 'tel',
+          message: '手机号格式不正确'
+        },
+        {
+          value: this.input.details,
+          method: 'optional',
+          message: '请输入详情地址'
+        }
+      ];
+      return this.check(rules);
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/mixin";
+  @import "../../../styles/components/list-item";
+
+</style>

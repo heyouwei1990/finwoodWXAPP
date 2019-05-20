@@ -1,0 +1,48 @@
+<template>
+  <view>
+    <view class="list_item">
+      <view class="title"><i>*</i>公司抬头</view>
+      <view class="input">
+        <input type="text" placeholder="xx发展有限公司" value="" />
+      </view>
+    </view>
+    <picker range="{{array}}" bindchange="bindPickerChange();" bindtap="selectSort(0);">
+      <view class="list_item">
+        <view class="title"><i>*</i>开户银行</view>
+        <view class="input">
+          <input type="text" disabled="true" placeholder="请选择" value="{{slotsData[0]}}" />
+        </view>
+        <icon class="iconfont icon-jiantouyou"></icon>
+      </view>
+    </picker>
+    <view class="list_item">
+      <view class="title"><i>*</i>对公帐号</view>
+      <view class="input">
+        <input type="text" placeholder="请输入对公银行卡号" value="" />
+      </view>
+    </view>
+    <view class="sec-cut"></view>
+    <view class="upload">
+      <view class="title">开户许可证</view>
+      <view class="img">
+        <image src="../../images/upload/account.png"></image>
+      </view>
+    </view>
+    <button class="greenBtn">提交审核</button>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class ReceivingAccount extends wepy.page {
+    config = {
+      navigationBarTitleText: '收款账户'
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/list-item";
+</style>

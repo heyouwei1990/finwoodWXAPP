@@ -1,0 +1,729 @@
+<template>
+  <view>
+    <scroll-view scroll-y style="height: 100vh;" class="content">
+      <swiper class='swiper-wrap'
+              indicator-dots='{{listImg.length>1}}'
+              indicator-color='rgba(255,255,255,0.6)'
+              indicator-active-color='rgba(255,255,255,1)'>
+        <block>
+          <swiper-item wx:for="{{listImg}}" wx:key="{{index}}">
+            <image src='{{item}}' @error="binderrorimg" data-errorimg="{{index}}"></image>
+          </swiper-item>
+        </block>
+      </swiper>
+      <view class="goods-info">
+        <view class="top">
+          <view class="flex1">
+            <view class="desc">{{product.productName}}</view>
+            <text class='price'
+            wx:if="{{productItems.salesPrice!=productItems.salesPriceUpper && productItems.salesPrice!=0}}">
+            ￥{{productItems.salesPrice}}~{{productItems.salesPriceUpper}}</text>
+            <text class='price'
+            wx:if="{{productItems.salesPrice==productItems.salesPriceUpper && productItems.salesPrice!=0}}">
+            ￥{{productItems.salesPrice}}</text>
+            <text class='price' wx:if="{{productItems.salesPrice==0}}">面议</text>
+          </view>
+          <view class="btn-fav" wx:if="{{!isfavorite}}" @tap="fav();">
+            <icon class="iconfont icon-shoucang"></icon>
+            <view>收藏</view>
+          </view>
+          <view class="btn-fav had" wx:if="{{isfavorite}}" @tap="fav();">
+            <icon class="iconfont icon-shoucanghou"></icon>
+            <view>已收藏</view>
+          </view>
+        </view>
+        <view class="bottom">
+          <view class="seller">
+            <text>{{product.shopName}}</text>
+            <icon class="iconfont icon-renzheng"></icon>
+          </view>
+          <view class="time">{{product.lastModifiedTime}}</view>
+        </view>
+      </view>
+      <view class="sec-cut"></view>
+      <view class="sec-hd">商品参数</view>
+      <view class="info-list">
+        <view class="info-li">
+          <text>编号：</text>
+          <view class="val">{{product.productCode}}</view>
+        </view>
+        <view class="info-li">
+          <text>品种：</text>
+          <view class="val">{{product.varietyName}}</view>
+        </view>
+        <view class="info-li">
+          <text>类型：</text>
+          <view class="val" wx:if="{{product.categoryName != null}}">{{product.categoryName}}</view>
+        </view>
+        <view class="info-li">
+          <text>产地：</text>
+          <view class="val">{{product.originName}}</view>
+        </view>
+        <view class="info-li">
+          <text>品牌：</text>
+          <view class="val" wx:if="{{product.brandName != null}}">{{product.brandName}}</view>
+        </view>
+        <view class="info-li">
+          <text>等级：</text>
+          <view class="val" wx:if="{{product.gradeName != null}}">{{product.gradeName}}</view>
+        </view>
+        <view class="info-li">
+          <text>规格：</text>
+          <view class="val">{{product.specification}}</view>
+        </view>
+        <view class="info-li" wx:if="{{product.categoryId == 1}}">
+          <text>是否烘干：</text>
+          <view class="val">{{product.isDryText}}</view>
+        </view>
+        <view class="info-li" wx:if="{{product.categoryId != 1}}">
+          <text>平均方：</text>
+          <view class="val" wx:if="{{product.meanSquare !=null && product.meanSquareUnitText !=null}}">{{product.meanSquare}} {{product.meanSquareUnitText}}</view>
+          <view class="val" wx:if="{{product.meanSquare ==null && product.meanSquareUnitText ==null}}"></view>
+        </view>
+        <view style="height:auto;" class="info-li" wx:if="{{product.introduction != null}}">
+          <text style="white-space:nowrap">产品简介：</text>
+          <view class="val">{{product.introduction}}</view>
+        </view>
+      </view>
+      <view class="sec-cut"></view>
+      <view class="sec-hd">交易方式</view>
+      <view class="info-list">
+        <!--<view class="info-li">
+          <text>是否担保：</text>
+          <view class="val">{{assure}}</view>
+        </view>
+        <view class="info-li">
+          <text>能否议价：</text>
+          <view class="val">{{product.isBarginText}}</view>
+        </view>-->
+        <view class="info-li">
+          <text>结算方式：</text>
+          <view class="val">余额支付 / 银行转账</view>
+        </view>
+        <view class="info-li">
+          <text>起订数量：</text>
+          <view class="val">{{product.minimumOrderQuantity}}{{product.unitName}}</view>
+        </view>
+        <view class="info-li">
+          <text>交货地址：</text>
+          <view class="val">{{product.warehouseProvinceName}}{{product.warehouseCityName}}{{product.warehouseName}}</view>
+        </view>
+        <!--<view class="info-li">
+          <text>预付比例：</text>
+          <view class="val">{{product.advanceRatio}}%</view>
+        </view>-->
+      </view>
+      <view class="sec-cut"></view>
+    </scroll-view>
+    <view class="fixed-bottom">
+      <!-- <view class="btn-icons">
+        <icon class="iconfont icon-shangcheng"></icon>
+        <text>店铺</text>
+      </view> -->
+      <view class="btn-icons" @tap="makePhoneCall();">
+        <icon class="iconfont icon-1"></icon>
+        <text>客服</text>
+      </view>
+      <view class="btn-icons" @tap="openCart();">
+        <icon class="iconfont icon-gouwuche"></icon>
+        <view class="cart-num" wx:if="{{count>0}}">{{countTxt}}</view>
+        <text>购物车</text>
+      </view>
+      <view class="btn-yellow" @tap="pick(true)" wx:if="{{!yourself && productItems.salesPrice!=0}}">加入购物车</view>
+      <view class="btn-red" @tap="pick(false)" wx:if="{{!yourself && productItems.salesPrice!=0}}">立即购买</view>
+      <view class="btn-yellow dark" wx:if="{{yourself || productItems.salesPrice==0}}">加入购物车</view>
+      <view class="btn-red dark" wx:if="{{yourself || productItems.salesPrice==0}}">立即购买</view>
+    </view>
+    <!--选购弹框-->
+    <view wx:if="{{tobuy}}" class="mask" @tap="pick()" catchtouchmove='true'></view>
+    <view class="{{tobuy?'buy-dialog active':'buy-dialog'}}" catchtouchmove='true'>
+      <icon class="iconfont icon-shanchu" @tap="pick()"></icon>
+      <view class="goods-mini">
+        <image mode="aspectFill" src="{{listImg[0]}}"></image>
+        <view class="price">￥{{ input.quantity*productItems.salesPrice }}</view>
+      </view>
+      <view class="goods-row">
+        <view class="label">单价</view>
+        <view class="price"
+        wx:if="{{productItems.salesPrice==productItems.salesPriceUpper && productItems.salesPrice!=0}}">
+        ￥{{ productItems.salesPrice }}元/{{product.unitName}}</view>
+        <view class="price"
+        wx:if="{{productItems.salesPrice!=productItems.salesPriceUpper && productItems.salesPrice!=0}}">
+        ￥{{productItems.salesPrice}}~{{productItems.salesPriceUpper}}元/{{product.unitName}}</view>
+        <view class="price" wx:if="{{productItems.salesPrice==0}}">面议</view>
+      </view>
+      <view class="goods-row">
+        <view class="label">库存</view>
+        <view class="vol">{{ productItems.stockQuantity }}立方米</view>
+      </view>
+      <view class="pick">
+        <view class="label">数量</view>
+        <view class="counter-component">
+          <view class="minus" @tap="minus();"></view>
+          <input type="number" @blur="computed();" @input="input" id="quantity" value="{{input.quantity}}" />
+          <view class="plus" @tap="plus();"></view>
+        </view>
+      </view>
+      <view class="btn-ensure" @tap="confirm();">确定</view>
+    </view>
+    <view class="quick-nav {{isShow?'show':''}}">
+      <view wx:if="{{isShow}}" class="quick-mask" @tap="quickNavSwitch"></view>
+      <view class="btn-switch" @tap="quickNavSwitch">
+        <icon class="iconfont icon-jiantouyou"></icon>
+        <view wx:if="{{!isShow}}" class="switch-txt">快速导航</view>
+        <view wx:if="{{isShow}}" class="switch-txt">收起</view>
+      </view>
+      <view class="nav-list">
+        <navigator url="{{item.url}}" open-type="{{item.openType}}"
+        hover-class="none" class="nav-item"
+        @tap="quickNavSwitch" wx:for="{{quickNav}}" wx:key="{{index}}">
+          <icon class="iconfont {{item.icon}}"></icon>
+          <view class="nav-item-txt">{{item.text}}</view>
+        </navigator>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import { TOKEN, SELECT_ADDRESS } from "../../utils/Constant";
+import product_api from "../../api/product_module"
+import order_api from "../../api/order_module"
+import input from '../../mixins/input'
+import Tips from "../../utils/Tips.js"
+import cache from "../../utils/Cache";
+
+export default class Detail extends wepy.page {
+  config = {
+    navigationBarTitleText: "商品详情"
+  };
+  mixins = [input];
+  //分享
+  onShareAppMessage (res) {
+    return {
+      title: `${this.product.shopName}新到一批很不错的${this.product.varietyName}，数量不多了，速来抢购吧！`,
+      imageUrl: this.shareImageUrl,
+      path: `/pages/store/detail?pkid=${this.pkid}`,
+      success(res) {
+        // 转发成功
+      },
+      fail(res) {
+        // 转发失败
+      }
+    }
+  };
+  data = {
+    tobuy: false,
+    token:'',
+    pkid:null,
+    listImg:[],   //商品轮播
+    productImg:null,
+    product:{   //商品信息
+      isSecuried:1
+    },
+    productItems:null,  //商品参数
+    shareImageUrl:null,
+    yourself:true,   //是否为自己的商品
+    isfavorite:false,   //是否收藏
+    input:{
+      quantity:0
+    },
+    count:0,       //购物车数量
+    selectType:false,       //true为选购物车，false为选购买
+    productCartQty:0,      //商品在购物车数量
+    quickNav:[
+        {
+          icon:'icon-shouye',
+          text:'首页',
+          url:'/pages/home/index',
+          openType:'switchTab'
+        },
+        {
+          icon:'icon-gouwuche',
+          text:'购物车',
+          url:'/pages/store/cart',
+          openType:'navigate'
+        },
+        {
+          icon:'icon-wode',
+          text:'我的',
+          url:'/pages/user/index',
+          openType:'switchTab'
+        },
+        {
+          icon:'icon-dingdan',
+          text:'我的订单',
+          url:'/pages/user/buyer/buyerOrder',
+          openType:'navigate'
+        },
+        {
+          icon:'icon-shoucang',
+          text:'我的收藏',
+          url:'/pages/user/buyer/collect',
+          openType:'navigate'
+        },
+        {
+          icon:'icon-dizhi1',
+          text:'收货地址',
+          url:'/pages/user/buyer/address',
+          openType:'navigate'
+        }
+      ],
+      isShow:false
+  };
+
+  computed = {
+    assure() {
+      return this.product.isSecuried==1?'担保交易':'否';
+    },
+    //购物车数量
+    countTxt(){
+      return this.count>99? 99+'+': this.count;
+    },
+  };
+
+  async onLoad({pkid}) {
+    this.pkid=Number(pkid);
+  }
+
+  async onShow() {
+    this.token=wepy.getStorageSync(TOKEN);
+    let r = await product_api.detail({
+      pkid:this.pkid,
+      token:this.token
+    });
+    this.listImg=r.result.images;
+    this.productImg=r.result.images[0];
+    this.product=r.result.product;
+    this.productItems=r.result.productItems[0];
+    this.shareImageUrl=r.result.shareImageUrl;
+    this.yourself=r.result.yourself;
+    this.input.quantity=this.product.minimumOrderQuantity
+    this.productCartQty = r.result.productCartQty;
+    this.getFav();
+    this.cartqty();
+  }
+
+  async getFav() {
+    let fav = await product_api.isfavorite({
+      pkid:this.pkid,
+      token:this.token
+    });
+    this.isfavorite=fav.result;
+    this.$apply();
+  }
+  async cartqty() {
+    let r =await order_api.cartqty({
+      token:this.token
+    });
+    this.count=r.result;
+    this.$apply();
+  }
+
+  methods = {
+    quickNavSwitch(){
+      this.isShow=!this.isShow;
+    },
+    makePhoneCall() {
+      wepy.$instance.globalData.makePhoneCall();
+    },
+    openCart() {
+      if(this.token == '' || this.token == null) {
+        this.$navigate('/pages/login/login');
+      }else {
+        this.$navigate('./cart');
+      }
+    },
+    binderrorimg:(e)=>{
+      let index= e.target.dataset.errorimg //获取循环的下标
+      this.listImg[index]="../../images/nopic.jpg";
+    },
+    pick(type) {
+      if(this.token == '' || this.token == null) {
+        this.$navigate('/pages/login/login');
+        return;
+      }
+      if (!cache.isLogin()) return;
+      if(type == 'true') {
+        this.selectType = true;
+      }else {
+        this.selectType = false;
+      }
+      this.tobuy = !this.tobuy;
+    },
+    //确认下单||购买
+    async confirm() {
+      if(this.selectType){
+        if(this.input.quantity > this.productItems.stockQuantity-this.productCartQty) {
+          Tips.error('库存已上限');
+          return;
+        }
+        //加入购物车
+        let r = await order_api.addtocart({
+          token:this.token,
+          productId:Number(this.pkid),
+          quantity:this.input.quantity
+        });
+        this.tobuy = !this.tobuy;
+        Tips.success('加入购物车成功');
+        this.cartqty();
+      }else {
+        //立即购买
+        wepy.removeStorageSync(SELECT_ADDRESS);
+        this.$navigate(`./order?pkid=${this.pkid}&quantity=${this.input.quantity}&type=buynow`);
+      }
+    },
+    //收藏
+    async fav() {
+      let r = await product_api.collect({
+        pkid:this.pkid,
+        token:this.token
+      });
+      if(!r) return;
+      if(this.isfavorite) {
+        Tips.success('取消收藏成功');
+      }else {
+        Tips.success('收藏成功');
+      }
+      this.getFav();
+    },
+    //输入数量限制
+    computed() {
+      if(this.input.quantity < this.product.minimumOrderQuantity) {
+        this.input.quantity=this.product.minimumOrderQuantity;
+        return;
+      }
+      if(this.input.quantity > this.productItems.stockQuantity) {
+        this.input.quantity=this.productItems.stockQuantity;
+        return;
+      }
+    },
+    minus() {
+      if(this.input.quantity <= this.product.minimumOrderQuantity) {
+        this.input.quantity=this.product.minimumOrderQuantity;
+        return;
+      }
+      this.input.quantity--;
+    },
+    plus() {
+      if(this.input.quantity >= this.productItems.stockQuantity) {
+        this.input.quantity=this.productItems.stockQuantity;
+        return;
+      }
+      this.input.quantity++;
+    }
+  };
+}
+</script>
+
+<style lang="scss">
+@import "../../styles/mixin";
+@import "../../styles/components/quick-nav";
+.content {
+  padding-bottom: 90rpx;
+}
+.noscroll {
+  height: 100%;
+  overflow: hidden;
+}
+.swiper-wrap {
+  height: 750rpx;
+  image {
+    width: 750rpx;
+    height: 750rpx;
+    display: block;
+  }
+}
+.goods-info {
+  padding: 20rpx 30rpx;
+  background-color: #fff;
+  .top {
+    @include fj;
+    align-items: flex-start;
+    .flex1 {
+      width: 200rpx;
+      flex: 1;
+    }
+    .desc {
+      word-break: break-all;
+      font-size: $text-nm;
+      color: $dark;
+      line-height: 44rpx;
+    }
+    .price {
+      color: $danger;
+      font-size: $text-nm;
+      line-height: 44rpx;
+      display: block;
+      margin-top: 12rpx;
+      margin-bottom: 12rpx;
+    }
+    .btn-fav {
+      text-align: right;
+      color: #999;
+      font-size: $text-xs;
+      line-height: 44rpx;
+      margin-left: 10rpx;
+      min-width:84rpx;
+      view {
+        color: inherit;
+      }
+    }
+    .iconfont {
+      font-size: 44rpx;
+      margin-bottom: 10rpx;
+    }
+    .btn-fav.had {
+      color: $danger;
+    }
+  }
+  .bottom {
+    @include fj;
+    font-size: $text-xs;
+    line-height: 48rpx;
+    align-items: flex-end;
+    .seller {
+      flex: 1;
+      overflow: hidden;
+      color: #999;
+    }
+    .icon-renzheng {
+      color: $secondary;
+      font-size: 28rpx;
+    }
+    .time {
+      color: #999;
+    }
+  }
+}
+.sec-hd {
+  height: 90rpx;
+  line-height: 90rpx;
+  padding: 21rpx 30rpx;
+  line-height: 48rpx;
+  font-size: $text-nm;
+  color: #333;
+  border-bottom: 1rpx solid $light;
+  background-color: #fff;
+  &:before {
+    content: "";
+    display: inline-block;
+    width: 8rpx;
+    height: 1em;
+    background-color: $primary;
+    border-radius: 4rpx;
+    vertical-align: middle;
+    margin-top: -3px;
+    margin-right: 20rpx;
+  }
+}
+.info-list {
+  padding: 0 30rpx;
+  background-color: #fff;
+}
+.dark {
+  background: #666!important;
+}
+.info-li {
+  border-bottom: 1rpx solid $light;
+  height: 90rpx;
+  line-height: 44rpx;
+  padding: 23rpx 0;
+  display: flex;
+  font-size: $text-nm;
+  color: $dark;
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+.fixed-bottom {
+  @include fj;
+  width: 100%;
+  height: 90rpx;
+  line-height: 90rpx;
+  align-items: center;
+  background-color: #fff;
+  left: 0;
+  z-index: 100;
+  .btn-icons {
+    flex: 1;
+    white-space: nowrap;
+    text-align: center;
+    font-size: $text-xs;
+    line-height: 1.2;
+    margin-right: 10rpx;
+    color: #666;
+    position: relative;
+    .iconfont {
+      display: block;
+      margin: 0 auto 4rpx;
+      font-size: 44rpx;
+    }
+    &:first-child {
+      margin-left: 20rpx;
+    }
+    .cart-num {
+      position: absolute;
+      width: 36rpx;
+      height: 36rpx;
+      line-height:36rpx;
+      top: 0;
+      right: 20%;
+      color: $danger;
+      border:1px solid $danger;
+      background: #fff;
+      border-radius:50%;
+    }
+  }
+  .btn-yellow,
+  .btn-red {
+    width: 220rpx;
+    color: #fff;
+    font-size: $text-nm;
+    text-align: center;
+  }
+  .btn-yellow {
+    background-color: $secondary;
+  }
+  .btn-red {
+    background-color: $danger;
+  }
+}
+.mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 888;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+.buy-dialog {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  z-index: 999;
+  background-color: #fff;
+  width: 100%;
+  transform: translateY(120%);
+  transition: all 0.3s linear;
+  &.active {
+    transform: translateY(0);
+  }
+  .price {
+    font-size: $text-nm;
+    color: $danger;
+  }
+  .label {
+    font-size: $text-xl;
+    line-height: 48rpx;
+    color: #333;
+  }
+  .icon-shanchu {
+    width: 88rpx;
+    height: 88rpx;
+    text-align: center;
+    line-height: 88rpx;
+    font-size: 40rpx;
+    color: #999;
+    position: absolute;
+    right: 10rpx;
+    top: 10rpx;
+  }
+}
+.goods-mini {
+  display: flex;
+  padding: 20rpx 30rpx;
+  image {
+    @include borderRadius;
+    width: 280rpx;
+    height: 280rpx;
+    border: 1px solid $light;
+    background-color: #fff;
+    padding: 0rpx;
+    margin-top: -88rpx;
+    margin-right: 20rpx;
+  }
+  .price {
+    line-height: 48rpx;
+  }
+}
+.goods-row {
+  min-height: 90rpx;
+  border-bottom: 1rpx solid $light;
+  padding-top: 20rpx;
+  padding-bottom: 20rpx;
+  margin-left: 30rpx;
+  margin-right: 30rpx;
+  .price {
+    line-height: 48rpx;
+  }
+  .vol {
+    font-size: $text-nm;
+    color: #333;
+    line-height: 48rpx;
+  }
+}
+.pick {
+  @include fj;
+  align-items: center;
+  height: 120rpx;
+  padding: 20rpx 30rpx;
+}
+.counter-component {
+  display: flex;
+  align-items: center;
+  color: #333;
+  text-align: center;
+  .minus,
+  .plus {
+    width: 60rpx;
+    height: 56rpx;
+    position: relative;
+    border: 1rpx solid #ccc;
+    background-color: #fff;
+    &:before{
+      content: '';
+      position: absolute;
+      left:50%;
+      top:50%;
+      width: 22rpx;
+      height:2rpx;
+      background-color: #666;
+      transform: translate(-50%,-50%);
+    }
+  }
+  .plus{
+    &:after{
+      content: '';
+      position: absolute;
+      left:50%;
+      top:50%;
+      height: 22rpx;
+      width:2rpx;
+      background-color: #666;
+      transform: translate(-50%,-50%);
+    }
+  }
+  input {
+    width: 60rpx;
+    height: 56rpx;
+    font-size: $text-nm;
+    line-height: 54rpx;
+    margin-left: 4px;
+    margin-right: 4px;
+    border: 0;
+    background-color: #fff;
+  }
+}
+.btn-ensure {
+  width: 100%;
+  text-align: center;
+  line-height: 90rpx;
+  height: 90rpx;
+  background-color: $danger;
+  color: #fff;
+  font-size: $text-xl;
+}
+</style>

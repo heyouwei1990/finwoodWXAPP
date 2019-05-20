@@ -1,0 +1,150 @@
+<template>
+    <view class="voucher-page">
+      <!-- <view class="list_item">
+        <view class="title"><i>*</i>转账类型</view>
+        <view class="input">
+          <radio-group class="radio-group" bindchange="radioChange">
+            <label class="radio" wx:for="{{radios}}"  wx:key="{{index}}">
+              <radio value="{{item.name}}" checked="{{item.checked}}"/>{{item.value}}
+            </label>
+          </radio-group>
+        </view>
+      </view> -->
+      <view class="list_item">
+        <view class="title"><i>*</i>{{title}}</view>
+        <view class="input">
+          <input type="text" disabled value="{{name}}" />
+        </view>
+      </view>
+      <view class="list_item">
+        <view class="title"><i>*</i>转账金额</view>
+        <view class="input">
+          <input type="text" disabled placeholder="请输入转账金额" value="{{sumPrice}}"  />
+        </view>
+        <text>元</text>
+      </view>
+      <view class="list_item">
+        <view class="title align-top">付款说明</view>
+        <view class="input">
+          <textarea maxlength="200" @input="input" placeholder="请输入200字以内付款说明"  />
+        </view>
+      </view>
+      <view class="upload">
+        <view class="title"><i>*</i>银行转账凭证</view>
+        <view class="img">
+          <image @tap="chooseImage(0);" src="{{preview[0]}}"></image>
+        </view>
+      </view>
+      <button class="greenBtn" @tap="submit();">提交</button>
+      <toast />
+    </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import member_api from '../../api/member_module'
+  import { TOKEN } from "../../utils/Constant"
+  import upload from '../../utils/Upload'
+  import Tips from '../../utils/Tips'
+  import order_api from '../../api/order_module'
+  import Toast from '../../components/toast'
+
+  export default class Voucher extends wepy.page {
+    config = {
+        navigationBarTitleText: '提交转账凭证'
+    };
+    components = {
+      toast: Toast
+    };
+
+    data={
+      radios:[
+        {name: '0', value: '企业'},
+        {name: '1', value: '个人',},
+      ],
+      pkid:0,
+      payType:0,  //1定金，2全款，3尾款
+      sumPrice:0,
+      token:'',
+      title:'公司抬头',
+      name:'',
+      preview:['../../images/upload/voucher.png'],
+      uploadUrl: [''],    //上传所需图片地址,变量名固定
+      ajax:false,
+      intro:''
+    }
+
+    onLoad({pkid,payType,sumPrice}) {
+      this.pkid=Number(pkid);
+      this.payType=Number(payType);
+      this.sumPrice=Number(sumPrice);
+    }
+
+    onShow() {
+      this.token=wepy.getStorageSync(TOKEN);
+      this.load();
+    }
+
+    async load() {
+      if(this.ajax) {
+        return;
+      }
+      let r = await member_api.centerinfo({
+        token:this.token
+      })
+      if (r.result.isCompanyVerified != 1) {
+        this.title = "开户姓名";
+        this.name=r.result.name;
+      } else {
+        this.title = "公司抬头";
+        this.name=r.result.companyName;
+      }
+      this.ajax=true;
+      this.$apply();
+    }
+
+    methods = {
+      //提交
+      async submit() {
+        if(this.uploadUrl[0] == '') {
+          this.$invoke('toast', 'show', {
+            message:'请上传银行转账凭证',
+          });
+          return;
+        }
+        let r = await order_api.payvoucher({
+          token:this.token,
+          pkid:this.pkid,
+          payRatioType:this.payType,
+          companyName:this.name,
+          paymentAmount:this.sumPrice,
+          paymentComment:this.intro,
+          bankSlipUrl:this.uploadUrl[0],
+          isConfirmTrade:true,
+          isConfirmCredit:false
+        })
+        if(r) {
+          Tips.success('提交成功');
+          setTimeout(() => {
+            this.$navigate(`/pages/user/buyer/buyerOrderDetail?pkid=${this.pkid}`);
+          }, 1000);
+        }
+      },
+      //调起相机相册
+      chooseImage(index) {
+        upload.minigramupload(this,index,{
+          type:3,
+          isThumb:0
+        });
+      },
+      input(e) {
+        this.intro=e.detail.value;
+      }
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/list-item";
+</style>

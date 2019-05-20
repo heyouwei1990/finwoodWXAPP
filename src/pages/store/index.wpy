@@ -1,0 +1,347 @@
+<template>
+  <view class="store-page column">
+    <navigator hover-class="none" class="searchbox" url="./search">
+      <view class="input-div">
+        <icon class="iconfont icon-fangdajing"></icon>
+        <view class="span-val" wx:if="{{key == ''}}">请输入品牌/品种/商家</view>
+        <view class="span-val" wx:if="{{key != ''}}">{{key}}</view>
+        <icon class="iconfont icon-shanchu" wx:if="{{key != ''}}" @tap.stop="clear();"></icon>
+      </view>
+    </navigator>
+    <view class="local-tab">
+      <view class="local-tab-hd">
+        <view class="{{selected=='-1'?'tab-hd-item active':'tab-hd-item'}}" @tap="selectRegion('-1')">全部</view>
+        <view class="{{selected=='1'?'tab-hd-item active':'tab-hd-item'}}" @tap="selectRegion('1')">西非</view>
+        <view class="{{selected=='2'?'tab-hd-item active':'tab-hd-item'}}" @tap="selectRegion('2')">东非</view>
+        <view class="{{selected=='3'?'tab-hd-item active':'tab-hd-item'}}" @tap="selectRegion('3')">巴新</view>
+        <view class="{{selected=='4'?'tab-hd-item active':'tab-hd-item'}}" @tap="selectRegion('4')">所罗门</view>
+      </view>
+      <view class="btn-rank {{isDrop?'drop':''}}" @tap="drop();">{{categoryText}}</view>
+    </view>
+    <view>
+      <view animation="{{animationData}}" class="spread">
+        <text class="{{categoryId=='1'?'active':''}}" @tap="selectSort('1','最新发布')">最新发布</text>
+        <text class="{{categoryId=='2'?'active':''}}" @tap="selectSort('2','价格最高')">价格最高</text>
+        <text class="{{categoryId=='3'?'active':''}}" @tap="selectSort('3','价格最低')">价格最低</text>
+      </view>
+      <view class="mark" wx:if="{{isDrop}}" @touchstart="drop(false);"></view>
+      <view class='goods-list' wx:if="{{items.length>0}}">
+        <navigator class='goods-li' hover-class="none" url="./detail?pkid={{item.pkid}}" wx:for="{{items}}" wx:key="{{index}}">
+          <view class='goods-dl'>
+            <view class='goods-dt'>
+              <image src='{{item.imageUrl}}' @error="errorimg" data-errorimg="{{index}}"></image>
+            </view>
+            <view class='goods-dd'>
+              <text class='desc'>{{item.productName}}</text>
+              <view class='seller'>
+                <text>{{item.shopName}}</text>
+                <icon class='iconfont icon-renzheng'></icon>
+              </view>
+              <view class='li-bottom'>
+                <text class='price' wx:if="{{item.salesPrice==0}}">面议</text>
+                <text class='price' wx:if="{{item.salesPrice!=item.salesPriceUpper && item.salesPrice!=0}}">￥{{item.salesPrice}}~{{item.salesPriceUpper}}</text>
+                <text class='price' wx:if="{{item.salesPrice==item.salesPriceUpper && item.salesPrice!=0}}">￥{{item.salesPrice}}</text>
+                <text class='time'>{{item.lastModifiedTime}}</text>
+              </view>
+            </view>
+          </view>
+        </navigator>
+      </view>
+      <view class="no-data" wx:if="{{items.length==0&&ajax}}">
+        <image  src="../../../images/nodata/noStore.png" mode="aspectFit"></image>
+        <view class="descp">商城目前没有任何信息</view>
+        <!-- <navigator hover-class="none" class="goto" open-type="switchTab" url="/pages/publish/index">快去发布商品啦</navigator> -->
+      </view>
+    </view>
+    <!--加载更多时动画-->
+    <bottomLoadMore :show.sync="showLoading" message="加载中..."></bottomLoadMore>
+    <!--暂无数据显示-->
+    <noMore :show.sync="is_noMore" message="没有更多数据了"></noMore>
+    <toast/>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import BottomLoadMore from "../../components/bottomLoadMore"
+  import NoMore from "../../components/noMore"
+  import product_api from "../../api/product_module"
+  import { SEARCH_KEY } from '../../utils/Constant'
+  import Tips from '../../utils/Tips'
+  import Toast from '../../components/toast'
+
+  export default class store extends wepy.page {
+    config = {
+      navigationBarTitleText: '商城',
+      enablePullDownRefresh:true
+    };
+    components = {
+      bottomLoadMore: BottomLoadMore,
+      noMore: NoMore,
+      toast:Toast
+    };
+    data={
+      selected:-1,        //当前选中地区
+      categoryText:'排序',     //当前选中排序
+      categoryId:'-1',
+      isDrop:false,
+      animationData: {},  //下拉动画
+      animation:null,
+      items: [], //商品列表
+      pageIndex:1,  //当前页码
+      pageCount:1,  //总页码
+      showLoading:true,
+      is_noMore:false,
+      key:'',
+      ajax:false
+    };
+
+    onLoad() {
+      this.animation = wx.createAnimation({
+        duration: 200,
+      })
+      this.animationData=this.animation.export();
+      this.load();
+    };
+
+    onShow() {
+      if(this.key != '') {
+        this.load();
+      }
+      //回到顶部
+      // wx.pageScrollTo({
+      //   scrollTop: 0
+      // })
+    }
+
+    async load() {
+      this.showLoading=true;
+      this.is_noMore=false;
+      this.ajax=false;
+      if(wepy.getStorageSync(SEARCH_KEY)!= null || wepy.getStorageSync(SEARCH_KEY)!= '') {
+        this.key = wepy.getStorageSync(SEARCH_KEY);
+      }
+      let r = await product_api.list({
+        key:this.key,
+        asc:this.itemType.asc,
+        orderType:this.itemType.orderType,
+        pageIndex:this.pageIndex,
+        originZoneId:Number(this.selected)
+      });
+      this.showLoading=false;
+      if(this.pageIndex>1) {
+        this.items=this.items.concat(...r.result.list);
+      }else {
+        this.items=r.result.list;
+      }
+      this.pageIndex=r.result.paging.pageIndex;
+      if(r.result.paging.pageCount != 0) {
+        this.pageCount=r.result.paging.pageCount;
+      }
+      if(this.pageIndex>=this.pageCount) {
+        this.is_noMore=true;
+      }
+      if(this.items.length==0){
+        this.is_noMore=false;
+        this.showLoading=false;
+      }
+      this.ajax=true;
+      this.$apply();
+    };
+
+    //下拉刷新
+    async onPullDownRefresh () {
+      if(this.items.length == 0) {
+        wepy.stopPullDownRefresh();
+        return;
+      }
+      this.pageIndex=1;
+      this.items = [];
+      wepy.removeStorageSync(SEARCH_KEY);
+      this.key = null;
+      await this.load();
+      wepy.stopPullDownRefresh();
+    };
+
+    //上拉加载
+    async onReachBottom() {
+      if(!this.is_noMore && this.items.length >0) {
+        this.pageIndex++;
+        this.load();
+      }
+    }
+    watch={
+      'isDrop':function(value) {
+        if(value) {
+          this.animation.height(108).step();
+          this.animationData=this.animation.export();
+        }else {
+          this.animation.height(0).step();
+          this.animationData=this.animation.export();
+        }
+      }
+    };
+    computed= {
+      itemType:function() {
+        switch(this.categoryId){
+          case '1':
+            return {asc:0,orderType:3};
+          case '2':
+            return {asc:0,orderType:2};
+          case '3':
+            return {asc:1,orderType:2};
+          default:
+            return {asc:0,orderType:1};
+        }
+      }
+    };
+    methods={
+      //选择地区
+      selectRegion(value) {
+        if(this.selected==value) {
+          return;
+        }
+        this.pageIndex=1;
+        this.selected=value;
+        this.items=[];
+        this.$apply();
+        this.load();
+      },
+      //筛选条件
+      selectSort(id,text) {
+        this.categoryText=text;
+        this.categoryId=id;
+        this.isDrop=!this.isDrop;
+        this.pageIndex=1;
+        this.$apply();
+        this.load();
+      },
+      //下拉选项
+      drop(){
+        this.isDrop=!this.isDrop;
+      },
+      errorimg(e){
+        let index= e.target.dataset.errorimg //获取循环的下标
+        this.items[index].imageUrl="../../images/nopic.jpg";
+      },
+      clear() {
+        this.key = '';
+        wepy.removeStorageSync(SEARCH_KEY);
+        this.$apply();
+        this.load();
+      }
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/search";
+  @import "../../styles/components/goods-list";
+  .store-page {
+    padding-top:170rpx;
+    .searchbox{
+      //position: relative;
+      position: fixed;
+      left:0;
+      top:0;
+      width: 100%;
+      z-index:20;
+    }
+    .mark {
+      background: rgba($color: #000000, $alpha: 0.5);
+      width: 100%;
+      height: 100%;
+      position: fixed;
+      z-index: 11;
+    }
+    .spread {
+      position: fixed;
+      top: 170rpx;
+      left: 0;
+      width: 100%;
+      height: 0;
+      background: #fff;
+      z-index: 99;
+      padding: 0 30rpx;
+      overflow: hidden;
+      text {
+        display: block;
+        border-bottom: 1px solid $light;
+        line-height: 36px;
+        font-size: 30rpx;
+        color: #333;
+        &:nth-last-child(1) {
+          border-bottom: none;
+        }
+      }
+      .active {
+        color: $primary;
+      }
+    }
+    .local-tab{
+      @include fj;
+      height:80rpx;
+      border-bottom:1rpx solid $light;
+      padding-left:30rpx;
+      padding-right:30rpx;
+      background-color: #fff;
+      //position: relative;
+      position: fixed;
+      left:0;
+      top:90rpx;
+      width: 100%;
+      z-index:20;
+    }
+    .local-tab-hd{
+      @include fj;
+      flex: 1;
+      width: 540rpx;
+    }
+    .tab-hd-item{
+      height:79rpx;
+      line-height:79rpx;
+      text-align: center;
+      border-bottom:4rpx solid transparent;
+      font-size:$text-lg;
+      color: $dark;
+    }
+    .tab-hd-item.active{
+      color: $primary;
+      border-bottom-color: $primary;
+    }
+    .btn-rank{
+      padding-right:30rpx;
+      line-height:79rpx;
+      height:79rpx;
+      position: relative;
+      color: $dark;
+      margin-left:50rpx;
+      font-size:$text-lg;
+    }
+    .btn-rank:after{
+      content: '';
+      position: absolute;
+      right: 0;
+      top:50%;
+      width: 0;
+      height:0;
+      border: 12rpx solid transparent;
+      border-top:16rpx solid #666;
+      margin-top:-6rpx;
+      transition: all 0.3s linear;
+    }
+    .btn-rank.drop{
+      color: $primary;
+    }
+    .btn-rank.drop:after{
+      transform: rotate(-180deg);
+      transform-origin: 12rpx 8rpx;
+      border-top-color:$primary;
+    }
+  }
+  .no-data{
+    position: relative;
+    height: 1000rpx;
+  }
+</style>

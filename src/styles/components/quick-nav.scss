@@ -1,0 +1,87 @@
+@import "../mixin";
+.quick-nav{
+  position: fixed;
+  right:0;
+  bottom:0;
+  width: 0;
+  height:0;
+  z-index:100;
+  .quick-mask{
+    position: absolute;
+    width: 100vw;
+    height:100vh;
+    bottom:0;
+    right:0;
+    z-index:1;
+    background-color: rgba(0,0,0,.5);
+    overflow: auto;
+  }
+  .btn-switch{
+    position: absolute;
+    right:0;
+    bottom:140rpx;
+    z-index:100;
+    width: 108rpx;
+    height:76rpx;
+    border-bottom-left-radius: 8rpx;
+    border-top-left-radius: 8rpx;
+    background-color: rgba(0,0,0,.8);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    line-height:76rpx;
+    padding-left:12rpx;
+    transition: all 0.3s linear;
+  }
+  .icon-jiantouyou{
+    transform: rotate(-180deg);
+    font-size:$text-xl;
+    margin-right:6rpx;
+  }
+  .switch-txt{
+    width: 50rpx;
+    font-size:$text-xs;
+    line-height:28rpx;
+    word-break: break-all;
+  }
+  .nav-list{
+    position: absolute;
+    right: -456rpx;
+    bottom:50rpx;
+    z-index:100;
+    width: 456rpx;
+    height:256rpx;
+    background-color: #fff;
+    border-radius: 10rpx;
+    padding:30rpx 0 10rpx;
+    transition: all 0.3s linear;
+  }
+  .nav-item{
+    float: left;
+    width: 33.3333%;
+    margin-bottom:20rpx;
+    text-align: center;
+    color: $dark;
+    .iconfont{
+      font-size:44rpx;
+    }
+    .nav-item-txt{
+      display: block;
+      font-size:$text-xs;
+      margin-top: 6rpx;
+      line-height:28rpx;
+      white-space:nowrap;
+    }
+  }
+  &.show{
+    .btn-switch{
+      right: 456rpx;
+    }
+    .icon-jiantouyou{
+      transform: rotate(0deg);
+    }
+    .nav-list{
+      right: 0;
+    }
+  }
+}

@@ -1,0 +1,470 @@
+<template>
+    <view class="register-page">
+      <view class="list_item">
+        <view class="title"><i>*</i>手机号</view>
+        <view class="input">
+          <input type="number" @input="input" maxlength="11" id="mobile" value="{{input.mobile}}" placeholder="请输入手机号"  />
+        </view>
+      </view>
+      <!--<view class="list_item">
+        <view class="title"><i>*</i>图片验证码</view>
+        <view class="input">
+          <input type="text" @input="input" id="verifyImg" value="{{input.verifyImg}}" placeholder="请输入图片验证码"  />
+        </view>
+        <image class="img-code" src="{{verifyImg}}" @tap="changeVerify();"></image>
+      </view>
+      <view class="list_item">
+        <view class="title"><i>*</i>手机验证码</view>
+        <view class="input">
+          <input type="text" @input="input" id="VerifyCode" value="{{input.VerifyCode}}" placeholder="请输入手机验证码"  />
+        </view>
+        <view class="phone-code" wx:if="{{!computedTime}}" @tap="getVerifyCode();">获取验证码</view>
+        <view class="phone-code" wx:if="{{computedTime}}">已发送({{computedTime}}s)</view>
+      </view>-->
+      <view class="list_item">
+        <view class="title"><i>*</i>设置密码</view>
+        <view class="input">
+          <input type="text" @input="input" id="password" maxlength="20" value="{{input.password}}" password="true" placeholder="密码请设置8-20位字符"  />
+        </view>
+      </view>
+      <view class="list_item">
+        <view class="title"><i>*</i>重复密码</view>
+        <view class="input">
+          <input type="text" @input="input" id="password2" maxlength="20" value="{{input.password2}}" password="true" placeholder="请再次输入密码"  />
+        </view>
+      </view>
+      <view class="list_item">
+        <view class="title">推荐人</view>
+        <view class="input">
+          <input type="text" @input="input" id="inviter" maxlength="100" value="{{input.inviter}}" placeholder="请输入推荐人"  />
+        </view>
+      </view>
+      <view class="deal-wrap">
+        <label class="checkbox {{isAgree?'checked':''}}" @tap="agree();">
+          <checkbox></checkbox>
+          <view>已阅读并同意</view>
+        </label>
+        <view class="deal" @tap="look(true)">《芬木网用户注册协议》</view>
+      </view>
+      <button class="greenBtn" @tap="submit();">立即注册</button>
+      <view class="mask" wx:if="{{dealPopup}}"></view>
+      <view class="deal-pop" animation="{{animationData}}">
+        <view class="deal-hd">芬木网会员注册协议</view>
+        <view class="deal-content">
+          <view class="p">《芬木网会员注册协议》（“本协议”或“会员注册协议”）适用于您使用芬木网技术平台所提供的所有芬木网技术平台服务。上海芬木网络科技发展有限公司将依据以下条款向您提供服务，请您仔细阅读并遵守。</view>
+          <view class="title">第一条 提示条款</view>
+          <view class="p">1.您以任何方式登陆芬木网平台并使用芬木网平台服务即表示您已充分阅读、理解并同意接受第三方服务协议的约束。</view>
+          <view class="p">2.本协议内容包括协议正文、芬木网交易规则及所有芬木网已经发布或将来可能发布的与芬木网平台服务相关的各类规则、公告或通知（以下合称“规则”）。所有规则均为本协议不可分割的组成部分，与协议正文具有同等法律效力。</view>
+          <view class="p">3.芬木网有权根据业务需要不时地制订、补充、修改本协议和/或规则，并以网站公示的方式进行变更公告，无需另行单独通知您。变更后的第三方服务协议和/或规则一经在网站公布，立即或在公告明确的特定时间自动生效。若您在前述变更公告后继续使用芬木网平台服务的，即表示您已经阅读、理解并接受经修订的第三方服务协议和/或规则。若您不同意相关变更，应当立即停止使用芬木网平台。</view>
+          <view class="p">4.在本协议项下，您和芬木网单独称为“一方”，合称为“双方”。</view>
+          <view class="title">第二条 定义</view>
+          <view class="p">1.芬木网技术平台服务：芬木网通过芬木网技术平台向您提供的与木材交易相关的支持服务。</view>
+          <view class="p">2.采购方：指在芬木网技术平台上进行木材采购。</view>
+          <view class="p">3.芬木网交易规则：指芬木网制定的针对您和第三方在芬木网技术平台上从事木材交易或其他有关事项时应遵守的规范。芬木网不时制订或修改的其他规范。</view>
+          <view class="p">4.芬木网交易服务：指由芬木网或芬木网委托的第三方为在芬木网技术平台进行木材交易的芬木网会员提供的款项代收代付的中介服务。</view>
+          <view class="title">第三条 会员注册</view>
+          <view class="p">1.申请成为芬木网会员应符合以下条件：</view>
+          <view class="li">a) 您必须是一家位于中国的合法成立并有效存在的企业；</view>
+          <view class="li">b) 具备法律法规规定的与木材销售相关的经营资质；</view>
+          <view class="li">c) 法律法规要求的其他资质。</view>
+          <view class="p">2.您应当根据芬木网的要求，按相应页面的提示及时、准确、真实、完整地提供您的资料，包括但不限于您的法定名称、电话号码、身份证号、营业执照及芬木网要求提供的其它证照或文件，并及时进行更新。如芬木网有合理理由怀疑您提供的资料错误、不实、过时或不完整的，芬木网有权停止向您提供芬木网技术平台服务，芬木网对此不承担任何责任，您将承担因此产生的任何直接或间接损失及不利后果。</view>
+          <view class="p">3.您通过芬木网技术平台递交注册申请并上传证明文件后，芬木网客服人员将在1个工作日内完成人工审核并向您告知审核结果，如遇法定节假日，则相应顺延。</view>
+          <view class="p">4.您的注册申请被芬木网审核通过后，您即成为芬木网平台的普通会员，有权使用芬木网提供的芬木网技术平台服务。</view>
+          <view class="title">第四条 承诺与保证</view>
+          <view class="p">成为芬木网普通会员后，您可以进一步申请注册为认证企业资质或个人实名。认证企业资质享受芬木网提供的交易服务，包括但不限于优先推广、参加芬木网平台营销活动、金融服务等。申请成为认证企业资质的，应在线递交申请。</view>
+          <view class="p">1.您向芬木网承诺并保证，在注册时及整个协议期限内：</view>
+          <view class="li">a) 您是依据中国法律合法设立、有效存续并良好运营的企业；</view>
+          <view class="li">b) 您拥有所有必需的法定资质、权利、能力和授权签订本协议并履行相应义务，授予本协议项下的权利、许可和授权，并已获得为经营您的业务依法所需的所有许可、批准和执照；</view>
+          <view class="li">c) 芬木网平台上销售的木材必须满足国家和行业的强制标准，以及芬木网不时制订或修改的木材质量要求；</view>
+          <view class="li">d) 您以及您的代理人将在您履行本协议项下义务和行使权利过程中遵守所有适用的法律。</view>
+          <view class="title">第五条 交易和结算</view>
+          <view class="p">1.您同意通过芬木网平台展示、推广和销售您的木材，并不可撤销地同意使用芬木网交易服务进行芬木网平台上的一切木材交易。芬木网交易服务包括以下内容：</view>
+          <view class="li">a) 待收款项：是指其他芬木网会员向您支付的各类款项。为避免疑义，前述款项将以T+0的方式进入您在芬木网指定支付通道上开通的会员虚拟账户，用于您提现或向其他芬木网会员支付款项；</view>
+          <view class="li">b) 待付款项：是指您将款项支付给您指定的其他芬木网会员。您可通过您在芬木网指定支付通道上开通的会员虚拟账户向其他芬木网会员付款；</view>
+          <view class="li">c) 提现功能：在芬木网指定支付通道上开通的会员虚拟账户进行提现，请您同意并理解，基于您提供的账户所属银行不同，您提取资金的到账时间将会存在差异。</view>
+          <view class="p">2.您不可撤销地授权芬木网：</view>
+          <view class="li">a) 根据芬木网交易规则，从您的芬木网指定支付通道上开通的会员虚拟账户中直接扣除您应支付给芬木网（补偿款或其他）的任何款项；</view>
+          <view class="li">b) 有权根据行政或司法裁决、芬木网关于芬木网平台交易纠纷的处理规范将您芬木网会员账户中的全部或部分资金支付给其他交易方。</view>
+          <view class="p">3.您同意并遵守芬木网或芬木网委托的第三方为芬木网交易服务制订或修改的所有规则，并在芬木网或芬木网委托的第三方的要求下另行签订有关芬木网交易服务的书面协议。</view>
+          <view class="p">4.如果芬木网有合理理由认为，您与本协议有关的任何行为和/或行动可能导致争议﹑费用支出或其他主张，芬木网有权延迟汇款并冻结您在芬木网指定支付通道上开通的会员虚拟账户中的资金，直至对您与本协议有关的行为和/或行动进行的调查完成之日。</view>
+          <view class="p">5.作为一项安全措施，芬木网有权，但无义务，对芬木网平台上的任何交易的价值或金额、在一定期间内所有交易的累积价值或金额、或每天或其他时段的交易次数设置交易限制。就下列情况，芬木网不对您承担责任：</view>
+          <view class="li">a) 如果芬木网不进行某一超过芬木网出于安全原因而设定的限制的交易或支付；</view>
+          <view class="li">b) 如果芬木网允许采购方在交易开始后由于不能继续使用芬木网平台或服务而退出某一交易。</view>
+          <view class="title">第六条 许可</view>
+          <view class="p">1.您授予芬木网及其关联方免费的、非独占的、永久的、不可撤销的权利和许可，对任何以及全部您的资料进行使用、复制、演示、展示、分发、改编、修改、重新排版、制作衍生作品以及商业化或非商业化，并可再许可前述权利。</view>
+          <view class="title">第七条 免责声明与一般豁免</view>
+          <view class="p">1.在法律允许的最大范围内，您以及您的关联方放弃要求，同时芬木网以及芬木网的关联方免于承担：</view>
+          <view class="li">a) 对本协议、本协议项下的服务以及预期交易的任何陈述与保证，包括对适销性、适用于特定目的或不侵权的任何默示担保；</view>
+          <view class="li">b) 基于交易过程、协议履行或交易惯例产生的默示担保；</view>
+          <view class="li">c) 任何义务、责任、权利、主张或侵权救济，不论其是否由于芬木网的疏忽产生。芬木网不保证芬木网平台所包含的功能和服务将满足您的要求，或是随时可用、及时、安全、不间断或无错误的，芬木网也不对任何服务中断承担责任，包括但不限于系统崩溃或其他可能影响任何交易的接收、处理、验收、完成、配送或结算的中断。</view>
+          <view class="p">2.如果您与采购方就您的产品产生争议，则您和采购方都不应向芬木网提出与此争议相关的任何形式和性质的主张、要求和损害赔偿（包括实际损害和间接损害）。</view>
+          <view class="title">第八条 税务问题</view>
+          <view class="p">1.您将自行负责并承担您因在芬木网平台进行交易而产生的所有税费。</view>
+          <view class="p">2.您根据本协议应向芬木网支付的任何费用均已包含所有的应纳税额。尽管如前所述，如果税务机关要求芬木网支付了任何税款，您应当立即向芬木网返还该笔已经垫付的款项。</view>
+          <view class="title">第九条 保密义务</view>
+          <view class="p">1.在您使用服务的过程中，您可能收到有关芬木网或其服务的不为公众所知悉的信息（“保密信息”），包括但不限于芬木网交易信息。您同意：</view>
+          <view class="li">a) 所有保密信息均为芬木网的独占财产；</view>
+          <view class="li">b) 您仅在使用服务的合理必要的范围内使用保密信息，并保证接触保密信息的人知悉并遵守本条规定的保密义务；</view>
+          <view class="li">c) 您不能将保密信息向除上述规定外的任何个人、公司或其他第三方披露；</view>
+          <view class="li">d) 您将采取一切合理措施来保护保密信息，使其不被以非经本协议明确允许的方式使用或披露。非经芬木网事先书面同意，您不得以任何方式（包括在您的宣传材料中）发布有关芬木网平台服务的任何公开声 明，或使用芬木网的名称、商标或标识。</view>
+          <view class="title">第十条 向第三方转让权利和义务</view>
+          <view class="p">1.未经芬木网的事先书面同意，您不得将本协议项下的权利义务转让给任何第三方。</view>
+          <view class="title">第十一条 违约</view>
+          <view class="p">1.一方不履行本协议义务或者履行本协议义务不符合约定或违反陈述与保证条款的，给对方造成损失的，损失赔偿额应当相当于因违约所造成的损失，包括协议履行后可以获得的利益，但不得超过违约一方订立合同时预见到或者应当预见到的因违反本协议可能造成的损失。</view>
+          <view class="p">2.下列事项发生时，芬木网有权立即终止本协议，并要求您赔偿芬木网遭受的损失。</view>
+          <view class="li">a) 散布对芬木网平台的非法或不实言论；</view>
+          <view class="li">b )利用芬木网平台从事违法犯罪活动。</view>
+          <view class="title">第十二条 不可抗力</view>
+          <view class="p">1.芬木网不对因不可预见、不能避免、无法克服的原因、事件或其他因素导致的任何迟延或未能履行本协议下的任何义务而承担责任。</view>
+          <view class="title">第十三条 您和芬木网关系</view>
+          <view class="p">1.本协议并不导致您和芬木网之间产生任何合伙、合资、代理、特许权使用、销售代表或雇佣关系。您无权代表芬木网发出或接受任何要约或承诺。您不能在您的网站或任何其他场所做出任何与本条规定相冲突的声明。</view>
+          <view class="p">2.本协议在您与芬木网之间不产生排他性合作关系。本协议所明示、提及或暗示的任何内容均不得被认为或解释为授予除本协议各方之外的任何人本协议项下或与本协议有关的任何合法或正当的权利、救济或诉求。本协议及其项下所有陈述、保证、约定、条件和条款仅为芬木网、您以及采购方的利益而制定。在您和芬木网之间，您将对与所有与使用第三方服务或您允许芬木网代表您使用的内容负责，包括符合适用的使用条款。</view>
+          <view class="title">第十四条 协议期限</view>
+          <view class="p">1.本协议有效期为您申请注册芬木网会员之日起一年。协议届满后，经双方协商一致，可延期一年。</view>
+          <view class="p">2.芬木网保留立即停止任何交易、阻止或限制访问服务，或采取其他行动的权利，以限制访问或提供任何不准确的产品陈列、任何不适当归类的产品、任何违法产品，或任何被所适用的法律所禁止的其他产品。</view>
+          <view class="title">第十五条 法律适用和争议解决</view>
+          <view class="p">1.本协议的订立、执行和解释及争议的解决均应适用中华人民共和国法律（但不包括其冲突法规则）。如果本协议中任何一条被视为废止、无效或因任何理由不可执行，该条应视为可分的且并不影响任何其余条款的有效性和可执行性。</view>
+          <view class="p">2.如双方就本协议内容或其执行发生任何争议，双方应尽力友好协商解决；协商不成时，双方同意向芬木网住所地具有管辖权的一审法院提起诉讼。</view>
+        </view>
+        <view class="btn-accept" bindtap="look(false)">已阅读并同意</view>
+        <toast />
+      </view>
+    </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import validate from '../../utils/Validate'
+  import tips from '../../utils/Tips'
+  import input from '../../mixins/input'
+  import member_api from '../../api/member_module.js'
+  import common_api from '../../api/common_module.js'
+  import MD5 from '../../utils/MD5'
+  import cache from '../../utils/Cache'
+  import Toast from '../../components/toast'
+  import {
+    USER_INFO
+  } from '../../utils/Constant'
+
+  export default class Register extends wepy.page {
+    config = {
+      navigationBarTitleText: '注册'
+    }
+    mixins = [input];
+    components = {
+      toast: Toast
+    };
+    data = {
+      verifyImg:'',
+      isAgree : true,
+      computedTime: 0, //倒数记时
+      input : {
+        mobile:'',
+        verifyImg:'',
+        VerifyCode:'',
+        password:'',
+        password2:'',
+        inviter:''
+      },
+      dealPopup:false,
+      animationData:{}, //协议弹出动画
+      animation:null,
+      openid:'',
+      unionid:''
+    }
+
+    async onShow() {
+      this.openid = wepy.getStorageSync(USER_INFO).openid;
+      this.unionid = wepy.getStorageSync(USER_INFO).unionid;
+      this.animation = wx.createAnimation({
+        duration: 200,
+      })
+      this.animationData=this.animation.export();
+      this.getCaptchaCode();
+    }
+
+    //获取图片验证码
+    async getCaptchaCode() {
+      let r = await common_api.verifyimg({
+        clientId:this.getUuid()
+      });
+      this.verifyImg=`data:image/jpeg;base64,${r.result}`;
+      this.$apply();
+    };
+    watch={
+      dealPopup(value){
+        if(value){
+          this.animation.top('10%').step();
+          this.animationData=this.animation.export();
+        }else{
+          this.animation.top('-100%').step();
+          this.animationData=this.animation.export();
+        }
+      }
+    }
+
+    methods = {
+      //打开协议弹框
+      look(){
+        this.dealPopup=!this.dealPopup;
+      },
+      changeVerify() {
+        this.getCaptchaCode();
+      },
+      async getVerifyCode() {
+        if (!this.validate()) {
+          return;
+        }
+        let r = await common_api.sendsms({
+          mobile:this.input.mobile,
+          imgCode:this.input.verifyImg,
+          clientId:this.getUuid()
+        });
+        if(r.code == 0) {
+          tips.success('发送成功');
+          this.computedTime = 60;
+          this.timer = setInterval(() => {
+            this.computedTime--;
+            this.$apply();
+            if (this.computedTime < 1) {
+                clearInterval(this.timer);
+            }
+          }, 1000);
+        }else {
+          tips.error(r.message);
+        }
+      },
+      //注册
+      async submit() {
+        if (!this.validate(true)) {
+          return;
+        }
+        if(!this.isAgree) {
+          tips.alert('请同意芬木网协议');
+          return;
+        }
+        let r = await member_api.register({
+          mobile:this.input.mobile,
+          //imgVerifyCode:this.input.verifyImg,
+          //smsVerifyCode:this.input.VerifyCode,
+          password:MD5.hex_md5(this.input.password),
+          pwdSafeLevel:this.computePassword(this.input.password),
+          clientId:this.getUuid(),
+          socialType:4,
+          openid:this.openid,
+          unionid:this.unionid,
+          inviter:this.input.inviter
+        });
+        if(r.code == 0) {
+          wepy.setStorageSync('userPhone',this.input.mobile);
+          cache.login(r.result,true);
+        }else {
+          tips.error(r.message);
+        }
+      },
+      //勾选协议
+      agree() {
+        this.isAgree=!this.isAgree;
+      }
+    }
+
+    validate(type) {
+      let rules = [
+        {
+          value: this.input.mobile,
+          method: 'optional',
+          message: '请输入手机号'
+        },
+        {
+          value: this.input.mobile,
+          method: 'tel',
+          message: '手机号格式不正确'
+        },
+//        {
+//          value: this.input.verifyImg,
+//          method: 'optional',
+//          message: '请输入图片验证码'
+//        }
+      ];
+      if(type) {
+        rules=rules.concat([
+//          {
+//            value: this.input.VerifyCode,
+//            method: 'optional',
+//            message: '请输入手机验证码'
+//          },
+          {
+            value: this.input.password,
+            method: 'rangelength',
+            param:[8,20],
+            message: '密码请设置8-20位字符'
+          },
+          {
+            value: this.input.password,
+            method: 'equalTo',
+            param:this.input.password2,
+            message: '两次输入密码不一致'
+          },
+        ])
+      }
+      return this.check(rules);
+    }
+
+    //获取uuid
+    getUuid() {
+      let uuid=wepy.getStorageSync('uuid');
+      if(uuid==null || uuid=='') {
+        uuid=this.uuid();
+        wepy.setStorageSync('uuid',uuid);
+      }
+      return uuid;
+    }
+    uuid() {
+      var s = [];
+      var hexDigits = "0123456789abcdef";
+      for (var i = 0; i < 36; i++) {
+        s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+      }
+      s[14] = "4"; // bits 12-15 of the time_hi_and_version field to 0010
+      s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1); // bits 6-7 of the clock_seq_hi_and_reserved to 01
+      s[8] = s[13] = s[18] = s[23] = "-";
+      var uuid = s.join("");
+      return uuid;
+    }
+
+    /**
+     * 计算密码强度
+     *
+     * @param password
+     * @returns
+     */
+    computePassword(password) {
+      var Modes = 0;
+      for (let i = 0; i < password.length; i++) {
+        Modes |= CharMode(password.charCodeAt(i));
+      }
+      return bitTotal(Modes);
+
+      function CharMode(iN) {
+        if (iN >= 48 && iN <= 57)// 数字
+          return 1;
+        if (iN >= 65 && iN <= 90) // 大写字母
+          return 2;
+        if ((iN >= 97 && iN <= 122) || (iN >= 65 && iN <= 90))
+          // 大小写
+          return 4;
+        else
+          return 8; // 特殊字符
+      }
+
+      function bitTotal(num) {
+        let modes = 0;
+        for (let i = 0; i < 4; i++) {
+          if (num & 1)
+            modes++;
+          num >>>= 1;
+        }
+        if(modes==2 || modes==3){
+          return 2
+        }else if(modes==4) {
+          return 3;
+        }else {
+          return modes;
+        }
+      }
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/list-item";
+  .register-page{
+    position: fixed;
+    left:0;
+    top:0;
+    width: 100%;
+    height:100%;
+    background-color: #fff;
+  }
+  .img-code{
+    width: 200rpx;
+    height:80rpx;
+    align-self: flex-end;
+    background-color: #f5f5f5;
+  }
+  .phone-code{
+    width: 200rpx;
+    height:100%;
+    color: $primary;
+    border-left: 1rpx solid $light;
+    text-align: center;
+  }
+  .deal-wrap{
+    padding:20rpx 30rpx;
+    line-height:90rpx;
+  }
+  .deal{
+    display: inline-block;
+    color: $primary;
+    font-size:$text-nm;
+  }
+  .mask{
+    position: fixed;
+    left:0;
+    top:0;
+    z-index:100;
+    width: 100%;
+    height:100%;
+    background-color: rgba(0,0,0,.6);
+  }
+  .deal-pop{
+    width: 660rpx;
+    height:80%;
+    position: fixed;
+    left:50%;
+    top:-100%;
+    z-index:999;
+    margin-left:-330rpx;
+    background-color: #fff;
+    border-radius: 10rpx;
+    display: flex;
+    flex-direction: column;
+  }
+  .deal-hd{
+    text-align: center;
+    color: $dark;
+    line-height:48rpx;
+    font-size: $text-xxl;
+    padding: 28rpx 0;
+  }
+  .deal-content{
+    flex: 1;
+    padding:20rpx;
+    overflow-x: hidden;
+    overflow-y: auto;
+    line-height:44rpx;
+    font-size:$text-nm;
+    .title{
+      color: $dark;
+      font-weight:500;
+      margin-top:44rpx;
+    }
+    .p{
+      color: #666;
+    }
+    .li{
+      color: #666;
+      padding-left:1em;
+    }
+  }
+  .btn-accept{
+    text-align: center;
+    background: #fff;
+    border-top: 1px solid #eee;
+    line-height: 90rpx;
+    height:90rpx;
+    font-size: $text-xl;
+    color: $primary;
+  }
+</style>

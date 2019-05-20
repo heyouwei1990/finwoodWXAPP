@@ -1,0 +1,235 @@
+<template>
+  <view class="page-address">
+    <view class="addressList" wx:if="{{list.length>0}}" wx:for="{{list}}" wx:key="index">
+      <view class="detail" @tap="select({{item}})">
+        <text>{{item.consignee}}</text>
+        <text>{{item.consigneeMobile}}</text>
+        <view class="addr">{{item.provinceName}}{{item.cityName}}{{item.address}}</view>
+      </view>
+      <view class="edit-wrap">
+        <view @tap.stop="setDefault({{item.pkid}},{{index}})" class="{{item.isDefault==1?'checkbox checked':'checkbox'}}">
+          <checkbox></checkbox>
+          <text wx:if="{{item.isDefault!=1}}">设为默认</text>
+          <text wx:if="{{item.isDefault==1}}">默认地址</text>
+        </view>
+        <view class="editBtn">
+          <navigator class="item-btn" hover-class="none" url="./addAddress?pkid={{item.pkid}}">
+            <icon class="iconfont icon-bianji"></icon>
+            <text>编辑</text>
+          </navigator>
+          <view @tap.stop="del({{item.pkid}})" class="item-btn">
+            <icon class="iconfont icon-lajitong"></icon>
+            <text>删除</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <navigator class="greenBtn" hover-class="none" url="./addAddress">+ 添加收货地址</navigator>
+    <view class="no-data" wx:if="{{list.length==0}}">
+      <image class="empty-img" src="../../../images/nodata/noOrder.png" mode="scaleToFill"></image>
+      <view class="desc">您暂时没有收货地址</view>
+      <navigator class="goto" hover-class="none" url="./addAddress">快去设置吧</navigator>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import member_api from '../../../api/member_module'
+  import { TOKEN, SELECT_ADDRESS } from "../../../utils/Constant"
+  import Tips from '../../../utils/Tips'
+
+  export default class Address extends wepy.page {
+    config = {
+      navigationBarTitleText: '收货地址管理'
+    };
+
+    data = {
+      token:'',
+      list:[],
+      select:false,
+    };
+
+    onLoad({select}) {
+      if(select) {
+        this.select=true;
+        this.$apply();
+      }
+    }
+
+    onShow() {
+      this.load();
+    }
+
+    async load() {
+      this.token = wepy.getStorageSync(TOKEN);
+      let r = await member_api.listshoppingaddr({
+        token: this.token,
+        pageIndex: 1
+      })
+      if(r.result.list != null && r.result.list != '') {
+        this.list = r.result.list;
+      }
+      this.$apply();
+    }
+
+    methods = {
+      //设置默认地址
+      async setDefault(pkid,index) {
+        if(this.list[index].isDefault==1){
+          //如果当前已经是默认，返回
+          return;
+        }
+        let r =await member_api.setdefaultaddr({
+          token: this.token,
+          pkid:pkid
+        });
+        if(r) {
+          for(let i=0;i<this.list.length;i++){
+            this.list[i].isDefault=0;
+          }
+          this.list[index].isDefault=1;
+          this.$apply();
+          Tips.success('设置成功!');
+        }
+      },
+      //删除地址
+      async del(pkid) {
+        await Tips.confirm('确认删除该地址？');
+        try {
+          let r =await member_api.delshoppingaddr({
+            token: this.token,
+            pkid:pkid
+          });
+          this.load();
+          Tips.success('删除成功!');
+        } catch (error) {
+
+        }
+      },
+      //选择地址
+      select(value) {
+        if(this.select) {
+          wepy.setStorageSync(SELECT_ADDRESS,value);
+          wepy.navigateBack();
+        }
+      }
+    };
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/mixin";
+  .page-address{
+    padding-bottom:90rpx;
+  }
+  .addressList {
+    background: #fff;
+    margin-bottom: 20rpx;
+    .checkbox{
+      padding-left: 72rpx;
+    }
+    .detail {
+      line-height:48rpx;
+      padding: 24rpx 30rpx;
+      font-size: $text-nm;
+      border-bottom:1rpx solid $light;
+      text{
+        color: $dark;
+        &:first-child{
+          margin-right:20rpx;
+          font-size: $text-xl;
+        }
+      }
+      .addr {
+        color: #666;
+        margin-top:10rpx;
+      }
+    }
+  }
+  .edit-wrap {
+    @include fj;
+    align-items: center;
+    height: 70rpx;
+    font-size: $text-nm;
+    color: #666;
+    line-height:48rpx;
+    padding:0 30rpx;
+    .editBtn {
+      display: flex;
+      align-items: center;
+      .icon-lajitong{
+        font-size:40rpx;
+        margin-top:-8rpx;
+      }
+      .icon-bianji{
+        font-size:30rpx;
+        margin-top:-4rpx;
+      }
+      .item-btn {
+        display: flex;
+        align-items: center;
+        color: #999;
+        font-size: $text-nm;
+        margin-left:40rpx;
+        icon{
+          margin-right:6rpx;
+          //vertical-align: middle;
+          line-height:40rpx;
+          position: relative;
+          width: 32rpx;
+          height:32rpx;
+        }
+        icon:before{
+          position: absolute;
+          right: 0;
+          top:0;
+        }
+        text{
+          //vertical-align: middle;
+        }
+      }
+    }
+  }
+  .greenBtn{
+    position: fixed;
+    left:0;
+    bottom:0;
+    z-index:10;
+    width: 100%;
+    height:90rpx;
+    line-height:90rpx;
+    text-align: center;
+    background-color: $primary;
+    color: #fff;
+    font-size:$text-xl;
+  }
+  .no-data{
+    position: absolute;
+    left:0;
+    top:0;
+    z-index:2;
+    width: 100%;
+    height:100%;
+    background-color: #fff;
+    padding:px2rem(188px) 15px px2rem(88px);
+    text-align: center;
+    .empty-img{
+      width: px2rem(233px);
+      height:px2rem(233px);
+      margin: 0 auto;
+    }
+    .desc{
+      font-size:16px;
+      color: #666;
+      line-height:1.5;
+      margin-bottom:10px;
+      margin-top:22px;
+    }
+    .goto{
+      font-size:14px;
+      color: $primary;
+      line-height:1.5;
+    }
+  }
+</style>

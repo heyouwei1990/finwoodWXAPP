@@ -1,0 +1,201 @@
+<template>
+    <view class="requirement-page">
+      <view class="list_item">
+        <view class="title"><i>*</i>品种</view>
+        <view class="input">
+          <input type="text" @input="input" value="{{input.varietyName}}" id="varietyName" placeholder="请输入产品名称"  />
+        </view>
+      </view>
+      <view class="list_item">
+        <view class="title"><i>*</i>数量</view>
+        <view class="input">
+          <input type="number" maxlength="10" @input="input" value="{{input.quantity}}" id="quantity" placeholder="请输入求购数量"  />
+        </view>
+        <view class="unit-words">m³</view>
+      </view>
+      <view class="list_item">
+        <view class="title"><i>*</i>规格</view>
+        <view class="input">
+          <input type="text" @input="input" value="{{input.specification}}" id="specification" placeholder="例：2-6cm*20-100cm*2-3m"  />
+        </view>
+        <view class="unit-words">mm</view>
+      </view>
+      <view class="list_item">
+        <view class="title"><i>*</i>交货地</view>
+        <view class="input">
+          <input type="text" @input="input" value="{{input.deliveryAddress}}" id="deliveryAddress" placeholder="请输入交货地址"  />
+        </view>
+      </view>
+      <view class="list_item">
+        <view class="title"><i>*</i>双方议价</view>
+        <view class="input">
+          <radio-group class="radio-group" bindchange="radioChange">
+            <label class="radio" wx:for="{{items}}" wx:key="{{index}}">
+              <radio value="{{item.name}}" checked="{{item.checked}}"/>{{item.value}}
+            </label>
+          </radio-group>
+        </view>
+      </view>
+      <view class="list_item" wx:if="{{bargaining==1}}">
+        <view class="title"><i>*</i>意向价格</view>
+        <view class="input">
+          <input type="number" maxlength="10" @input="input" value="{{input.purchasePrice}}" id="purchasePrice" placeholder="请输入您的意向价格"  />
+        </view>
+        <view class="unit-words">元</view>
+      </view>
+      <view class="list_item">
+        <view class="title"><i>*</i>联系人</view>
+        <view class="input">
+          <input type="text" @input="input" value="{{input.contact}}" id="contact" placeholder="请输入您的真实姓名"  />
+        </view>
+      </view>
+      <view class="list_item">
+        <view class="title"><i>*</i>联系电话</view>
+        <view class="input">
+          <input type="number" @input="input" value="{{input.mobile}}" id="mobile" placeholder="请输入您的联系方式"  />
+        </view>
+      </view>
+      <view class="list_item">
+        <view class="title align-top">其他要求</view>
+        <view class="input">
+          <textarea maxlength="200" @input="input" value="{{input.details}}" id="details" placeholder="请输入200字以内其他要求"  />
+        </view>
+      </view>
+      <button class="greenBtn" @tap="publish">立即发布</button>
+      <toast/>
+    </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import { TOKEN } from '../../utils/Constant'
+  import input from '../../mixins/input'
+  import data_api from '../../api/data_module'
+  import member_api from '../../api/member_module'
+  import validate from '../../utils/Validate'
+  import Toast from '../../components/toast'
+
+  export default class Requirement extends wepy.page {
+    config = {
+      navigationBarTitleText: '发布求购'
+    };
+    mixins=[input];
+    components={
+      toast:Toast
+    }
+    data={
+      token:'',
+      input:{
+        varietyName:'',
+        specification:'',
+        contact:'',
+        mobile:'',
+        purchasePrice:'',
+        quantity:'',
+        details:'',
+        deliveryAddress:''
+      },
+      items:[
+        {name: '0', value: '是',checked:true},
+        {name: '1', value: '否',},
+      ],
+      bargaining:0
+    };
+    onShow(){
+      this.token=wepy.getStorageSync(TOKEN);
+      this.load();
+    }
+    async load(){
+      let r=await member_api.centerinfo({
+        token:this.token
+      })
+      this.input.contact=r.result.name;
+      this.input.mobile=r.result.mobile;
+      this.$apply();
+    };
+    methods={
+      async publish(){
+        if(!this.validate()){
+          return;
+        }
+        if(this.bargaining==1 && this.input.purchasePrice===''){
+          this.$invoke('toast','show',{
+            message:'请输入您的意向价格'
+          })
+          return;
+        }
+        let r=await data_api.submitinquiry({
+          token:this.token,
+          varietyName:this.input.varietyName,
+          specification:this.input.specification,
+          contact:this.input.contact,
+          mobile:this.input.mobile,
+          purchasePrice:this.bargaining==1?Number(this.input.purchasePrice):0,
+          quantity:Number(this.input.quantity),
+          details:this.input.details,
+          deliveryAddress:this.input.deliveryAddress,
+        })
+        if(r){
+          this.$navigate(`../user/success?text=返回热门求购&page=2`);
+        }
+      },
+      radioChange(e){
+        if(e.detail.value==0){
+          this.bargaining=0;
+        }else{
+          this.bargaining=1;
+        }
+      }
+    };
+    validate(){
+      let rules=[
+        {
+          value:this.input.varietyName,
+          method:'optional',
+          message:'请输入产品名称'
+        },
+        {
+          value:this.input.quantity,
+          method:'optional',
+          message:'请输入求购数量'
+        },
+        {
+          value:this.input.quantity,
+          method:'amount',
+          message:'数量需填入正整数'
+        },
+        {
+          value:this.input.specification,
+          method:'optional',
+          message:'请输入规格'
+        },
+        {
+          value:this.input.deliveryAddress,
+          method:'optional',
+          message:'请输入交货地址'
+        },
+        {
+          value:this.input.contact,
+          method:'optional',
+          message:'请输入您的真实姓名'
+        },
+        {
+          value:this.input.mobile,
+          method:'optional',
+          message:'请输入您的联系方式'
+        },
+        {
+          value: this.input.mobile,
+          method: 'call',
+          message: '号码格式不正确'
+        },
+      ];
+      return this.check(rules);
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/list-item";
+</style>

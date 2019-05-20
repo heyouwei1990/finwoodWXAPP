@@ -1,0 +1,298 @@
+<template>
+    <view class="finance-page">
+      <image class="finance-banner" src="../../images/finance/banner.jpg"></image>
+      <view class="loan-dl">
+        <view class="loan-dt">
+          <image src="../../images/finance/ico1.png"></image>
+        </view>
+        <view class="loan-info">
+          <view class="loan-hd">{{loanType[0].text}}</view>
+          <view class="loan-desc">适合对象：持有现货</view>
+          <view class="loan-desc">额　　度：50-500万人民币</view>
+          <view class="loan-desc">利　　率：年化9-12%</view>
+        </view>
+        <view class="btn-apply" @tap="apply({{loanType[0].text}},{{loanType[0].value}})">立即申请</view>
+      </view>
+      <view class="loan-dl">
+        <view class="loan-dt">
+          <image src="../../images/finance/ico2.png"></image>
+        </view>
+        <view class="loan-info">
+          <view class="loan-hd">{{loanType[1].text}}</view>
+          <view class="loan-desc">适合对象：持有提单</view>
+          <view class="loan-desc">额　　度：50-500万人民币</view>
+          <view class="loan-desc">利　　率：年化10-12%</view>
+        </view>
+        <view class="btn-apply" @tap="apply({{loanType[1].text}},{{loanType[1].value}})">立即申请</view>
+      </view>
+      <view class="loan-dl">
+        <view class="loan-dt">
+          <image src="../../images/finance/ico3.png"></image>
+        </view>
+        <view class="loan-info">
+          <view class="loan-hd">{{loanType[2].text}}</view>
+          <view class="loan-desc">适合对象：信誉良好</view>
+          <view class="loan-desc">额　　度：10-100万人民币</view>
+          <view class="loan-desc">利　　率：年化11-15%</view>
+        </view>
+        <view class="btn-apply" @tap="apply({{loanType[2].text}},{{loanType[2].value}})">立即申请</view>
+      </view>
+      <view class="sec-cut"></view>
+      <view class="loan-advantage-title">快速灵活，安全保障</view>
+      <view class="advantage-list">
+        <view class="advantage-dl">
+          <view class="advantage-dt">
+            <image src="../../images/finance/ico-advantage1.png"></image>
+          </view>
+          <view class="advantage-dd">
+            <view class="hd">快速审批</view>
+            <view class="advantage-desc">在线审批</view>
+            <view class="advantage-desc">3个工作日内到账</view>
+          </view>
+        </view>
+        <view class="advantage-dl">
+          <view class="advantage-dt">
+            <image src="../../images/finance/ico-advantage2.png"></image>
+          </view>
+          <view class="advantage-dd">
+            <view class="hd">超低利息</view>
+            <view class="advantage-desc">7天免息贷款</view>
+            <view class="advantage-desc">0压力还款</view>
+          </view>
+        </view>
+        <view class="advantage-dl">
+          <view class="advantage-dt">
+            <image src="../../images/finance/ico-advantage3.png"></image>
+          </view>
+          <view class="advantage-dd">
+            <view class="hd">多种产品</view>
+            <view class="advantage-desc">产品额度灵活</view>
+            <view class="advantage-desc">满足不同需求</view>
+          </view>
+        </view>
+        <view class="advantage-dl">
+          <view class="advantage-dt">
+            <image src="../../images/finance/ico-advantage4.png"></image>
+          </view>
+          <view class="advantage-dd">
+            <view class="hd">期限灵活</view>
+            <view class="advantage-desc">适用30-180天</view>
+            <view class="advantage-desc">自主选择</view>
+          </view>
+        </view>
+      </view>
+      <view class="sec-cut"></view>
+      <view class="quick-nav {{isShow?'show':''}}">
+        <view wx:if="{{isShow}}" class="quick-mask" @tap="quickNavSwitch"></view>
+        <view class="btn-switch" @tap="quickNavSwitch">
+          <icon class="iconfont icon-jiantouyou"></icon>
+          <view wx:if="{{!isShow}}" class="switch-txt">快速导航</view>
+          <view wx:if="{{isShow}}" class="switch-txt">收起</view>
+        </view>
+        <view class="nav-list">
+          <navigator url="{{item.url}}" open-type="{{item.openType}}"
+          hover-class="none" class="nav-item"
+          @tap="quickNavSwitch" wx:for="{{quickNav}}" wx:key="{{index}}">
+            <icon class="iconfont {{item.icon}}"></icon>
+            <view class="nav-item-txt">{{item.text}}</view>
+          </navigator>
+        </view>
+      </view>
+    </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import { TOKEN, GLOBAL_INFO } from "../../utils/Constant"
+
+  export default class Finance extends wepy.page {
+    config = {
+      navigationBarTitleText: '芬木金融'
+    };
+    data={
+      loanType:[],
+      token:'',
+      quickNav:[
+        {
+          icon:'icon-shouye',
+          text:'首页',
+          url:'/pages/home/index',
+          openType:'switchTab'
+        },
+        {
+          icon:'icon-gouwuche',
+          text:'购物车',
+          url:'/pages/store/cart',
+          openType:'navigate'
+        },
+        {
+          icon:'icon-wode',
+          text:'我的',
+          url:'/pages/user/index',
+          openType:'switchTab'
+        },
+        {
+          icon:'icon-dingdan',
+          text:'我的订单',
+          url:'/pages/user/buyer/buyerOrder',
+          openType:'navigate'
+        },
+        {
+          icon:'icon-shoucang',
+          text:'我的收藏',
+          url:'/pages/user/buyer/collect',
+          openType:'navigate'
+        },
+        {
+          icon:'icon-dizhi1',
+          text:'收货地址',
+          url:'/pages/user/buyer/address',
+          openType:'navigate'
+        }
+      ],
+      isShow:false
+    };
+    async onShow(){
+      this.load();
+      this.token=wepy.getStorageSync(TOKEN);
+    };
+    async load(){
+      let r=wepy.getStorageSync(GLOBAL_INFO);
+      this.loanType=r.lstLoanType
+    }
+    methods={
+      apply(txt,type){
+        if(!this.token){
+          this.$navigate(`../login/login`);
+        }else{
+          this.$navigate(`./applyLoan?text=${txt}&type=${type}`);
+        }
+      },
+      quickNavSwitch(){
+        this.isShow=!this.isShow;
+      }
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/quick-nav";
+  .finance-banner{
+    display: block;
+    width: 750rpx;
+    height:274rpx;
+  }
+  .loan-dl{
+    @include fj;
+    width: 100%;
+    background-color: #fff;
+    padding:24rpx 30rpx;
+    border-bottom:1rpx solid $light;
+    align-items: center;
+  }
+  .loan-dt{
+    width: 102rpx;
+    height:102rpx;
+    overflow: hidden;
+    margin-right:30rpx;
+  }
+  .loan-dt>image{
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .loan-info{
+    width: 360rpx;
+    overflow: hidden;
+    margin-right:20rpx;
+    flex:1;
+    line-height:44rpx;
+    color: $dark;
+    .loan-hd{
+      font-size:$text-lg;
+      font-weight:500;
+    }
+    .loan-desc{
+      font-size: $text-nm;
+    }
+  }
+  .btn-apply{
+    width: 160rpx;
+    height:54rpx;
+    text-align: center;
+    border-radius: 54rpx;
+    line-height:54rpx;
+    background-color: $primary;
+    color: #fff;
+    font-size:$text-nm;
+  }
+  .loan-advantage-title{
+    width: 100%;
+    overflow: hidden;
+    text-align: center;
+    height:90rpx;
+    line-height:90rpx;
+    background-color: #fff;
+    font-size:$text-xl;
+    color: $dark;
+    border-bottom:1rpx solid $light;
+  }
+  .advantage-list{
+    overflow: hidden;
+    background-color: #fff;
+  }
+  .advantage-dl{
+    float: left;
+    width: 50%;
+    display: flex;
+    align-items: center;
+    padding:30rpx 0 30rpx 30rpx;
+    border-bottom:1rpx solid $light;
+  }
+  .advantage-dl:nth-child(odd){
+    border-right: 1rpx solid $light;
+  }
+  .advantage-dt{
+    width: 100rpx;
+    height:100rpx;
+    margin-right:30rpx;
+    border-radius: 10rpx;
+    text-align: center;
+    padding-top:15rpx;
+    line-height:1;
+  }
+  .advantage-dl:nth-child(1) .advantage-dt{
+    background-color: #f9aa32;
+  }
+  .advantage-dl:nth-child(2) .advantage-dt{
+    background-color: $primary;
+  }
+  .advantage-dl:nth-child(3) .advantage-dt{
+    background-color: #44c1f0;
+  }
+  .advantage-dl:nth-child(4) .advantage-dt{
+    background-color: #ff6159;
+  }
+  .advantage-dt>image{
+    width: 71rpx;
+    height:71rpx;
+  }
+  .advantage-dd{
+    overflow: hidden;
+    .hd{
+      font-size:$text-lg;
+      color: $dark;
+      line-height: 48rpx;
+    }
+    .advantage-desc{
+      font-size:$text-nm;
+      color: #666 ;
+      line-height:36rpx;
+      white-space:nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+</style>

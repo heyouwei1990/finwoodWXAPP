@@ -1,0 +1,424 @@
+<template>
+    <view class="pay-page">
+      <view class="head-tip">
+        <view class="flex1">
+          <view>等待买家付款</view>
+          <view>超过24小时订单将自动关闭</view>
+        </view>
+        <icon class="iconfont icon-dengdai"></icon>
+      </view>
+      <view class="address">
+        <icon class="iconfont icon-dizhi1"></icon>
+        <view class="flex1">
+          <view class="top">
+            <text class="contacts">{{consignee}}</text>
+            <text class="tel">{{consigneeMobile}}</text>
+          </view>
+          <view class="addr">{{shippingAddress}}</view>
+        </view>
+      </view>
+      <view class="sec-cut"></view>
+      <view class="list_item">
+        <view class="title">支付比例</view>
+        <view class="input">
+          <radio-group class="radio-group" @change="radioChange">
+            <label class="radio" wx:for="{{radioList}}"  wx:key="{{index}}">
+              <radio value="{{item.name}}" checked="{{item.checked}}"/>{{item.value}}
+            </label>
+          </radio-group>
+        </view>
+      </view>
+      <view class="list_item">
+        <view class="title">支付方式</view>
+        <view class="input">
+          <radio-group class="radio-group" @change="typeChange">
+            <label class="radio" wx:for="{{typeList}}"  wx:key="{{index}}">
+              <radio value="{{item.name}}" checked="{{item.checked}}"/>{{item.value}}
+            </label>
+          </radio-group>
+        </view>
+      </view>
+      <view class="list_item" wx:if="{{payType == 0 &&payInfo.price<=balance}}">
+        <!-- <input value="电脑登录www.finwood.cn会员中心-我的订单付款" disabled='true' class="text" /> -->
+        <!-- 电脑登录www.finwood.cn会员中心-我的订单付款 -->
+        当前账户余额：{{balance}}元
+      </view>
+      <view class="list_item" wx:if="{{payType == 0 && payInfo.price>balance}}">
+        <!-- 电脑登录www.finwood.cn会员中心-我的订单付款 -->
+        当前账户余额：{{balance}}元
+      </view>
+      <view class="list_item" wx:if="{{payType == 0 && payInfo.price>balance}}">
+        <input value="请至电脑端www.finwood.cn充值" disabled='true' class="text" />
+      </view>
+      <view class="list_item" wx:if="{{payType == 1}}">
+        请通过银行转账至芬木网对公账户并提交转账凭证
+      </view>
+      <!-- <view class="list_item noopenAccount" wx:if="{{payType == 1 && !openAccount}}">
+        商家未开户，请联系客服{{serviceTel}}，平台将为您尽快联系商家完成开户。
+      </view> -->
+      <view wx:if="{{payType == 1}}">
+        <view class="sec-cut"></view>
+        <view class="sec-hd">{{myBrandAccountName}}银行账户信息</view>
+        <view class="list_item">
+          <view class="title">公司户名</view>
+          <view class="input">
+            <view class="val">{{myBrandAccountName}}</view>
+          </view>
+        </view>
+        <view class="list_item">
+          <view class="title">开户行</view>
+          <view class="input">
+            <view class="val">{{myBrandBranch}}</view>
+          </view>
+        </view>
+        <view class="list_item">
+          <view class="title">银行卡号</view>
+          <view class="input">
+            <view class="val">{{myBrandAccountNo}}</view>
+          </view>
+        </view>
+      </view>
+      <view class="fixed-bottom">
+        <view class="txt">{{payInfo.text}}金额：<text class="price">¥{{payInfo.price}}</text></view>
+        <!-- <view class="txt flex1">预付金额：<text class="price">¥23000</text></view> -->
+        <view class="btn-submit dark" wx:if="{{payType == 0&&payInfo.price>balance}}">确认支付</view>
+        <view class="btn-submit" @tap="pay();" wx:if="{{payType == 0&&payInfo.price<=balance &&ajax}}">确认支付</view>
+        <view class="btn-submit" @tap="submit();" wx:if="{{payType == 1 && ajax}}">提交凭证</view>
+      </view>
+      <toast/>
+    </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import { TOKEN, GLOBAL_INFO } from "../../utils/Constant";
+  import order_api from "../../api/order_module"
+  import member_api from "../../api/member_module"
+  import Toast from '../../components/toast'
+
+  export default class Pay extends wepy.page {
+    config = {
+        navigationBarTitleText: '支付'
+    };
+    components={
+      toast:Toast
+    }
+    data={
+      serviceTel:wepy.getStorageSync(GLOBAL_INFO).serviceTel,
+      radioList:[
+        {name: '0', value: '支付定金',checked:true},
+        {name: '1', value: '支付全款',},
+      ],
+      typeList:[
+        {name: '1', value: '银行转账',checked:true},
+      ],
+      payType:1,    //0为在线支付，1为银行转账
+      payRadio:0,
+      pkid:0,
+      consignee:null,       //收货地址信息
+      consigneeMobile:null,
+      shippingAddress:null,
+      myBrandAccountName:null,    //银行信息
+      myBrandBranch:null,
+      myBrandAccountNo:null,
+      goodsAmount:0,        //金额
+      unpaidAmount:0,
+      advanceAmount:0,
+      paymentStatus:-1,
+      openAccount:false,   //是否开户
+      type:null,
+      voucherProcessing:0,   //是否有处理中的订单
+      balance:0,   //可用余额
+      ajax:false,
+      time:0,
+      fullPay:false
+    }
+
+    onLoad({pkid,type}) {
+      this.pkid=Number(pkid);
+      if(type) {
+        this.type=type;
+      }
+    }
+
+    onUnload() {
+      if(this.type =='cart') {
+        wepy.navigateBack();
+      }
+    }
+
+    onShow() {
+      this.token=wepy.getStorageSync(TOKEN);
+      //this.accountbalance();
+      this.load();
+    }
+
+    async load() {
+      let r = await order_api.payinfo({
+        token:this.token,
+        pkid:this.pkid
+      })
+      if(r.result.deliveryType == 2) {
+        this.consignee=`收货人：${r.result.contact}`;
+        this.consigneeMobile=r.result.contactMobile;
+        this.shippingAddress=`收货地址：${r.result.contactAddress}`;
+      }else {
+        this.consignee=`卖家联系人：${r.result.contact}`;
+        this.consigneeMobile=r.result.contactMobile;
+        this.shippingAddress=`提货地址：${r.result.contactAddress}`;
+      }
+      if(r.result.paymentStatus==2) {
+        this.radioList=[{name: '0', value: '支付尾款',checked:true}];
+      }
+      this.paymentStatus=r.result.paymentStatus;
+      this.goodsAmount=r.result.totalAmount;
+      this.unpaidAmount=r.result.unpaidAmount;
+      this.advanceAmount=r.result.advanceAmount;
+      this.openAccount=r.result.openAccount;
+      this.myBrandAccountName = r.result.myBrandAccountName;
+      this.myBrandBranch = r.result.myBrandBranch;
+      this.myBrandAccountNo = r.result.myBrandAccountNo;
+      this.voucherProcessing = r.result.voucherProcessing;
+      this.balance = r.result.buyerBalance;
+      // if(r.result.buyerOpenAccount && this.openAccount) {
+      //   this.typeList = [
+      //     {name: '0', value: '余额支付',checked:true},
+      //     {name: '1', value: '银行转账',},
+      //   ];
+      //   this.payType = 0;
+      // }
+      this.fullPay = r.result.fullPay;
+      if(this.fullPay) {
+        this.radioList = [
+          {name: '1', value: '支付全款',checked:true}
+        ];
+        this.payRadio = 1;
+        this.price = this.goodsAmount;
+        this.text = '全款';
+        this.payRatioType = 2;
+      }
+      this.ajax = true;
+      this.$apply();
+    }
+
+    async accountbalance() {
+      let r = await member_api.accountbalance({
+        token:this.token
+      })
+      this.balance = r.result.accBalance;
+      this.$apply();
+    }
+
+    computed = {
+      "payInfo":function() {
+        if(this.paymentStatus == 2) {
+          return {
+            price:this.unpaidAmount,
+            text:'尾款',
+            payRatioType:3
+          };
+        }else {
+          if(this.payRadio == 0) {
+            return {
+              price:this.advanceAmount,
+              text:'定金',
+              payRatioType:1
+            };
+          }else if(this.payRadio == 1) {
+            return {
+              price:this.goodsAmount,
+              text:'全款',
+              payRatioType:2
+            };
+          }
+        }
+      }
+    }
+
+    methods = {
+      //去付款
+      async pay() {
+        if(this.time != 0) {
+          return;
+        }
+        this.time = 1;
+        let r = await order_api.transferpay({
+          token:this.token,
+          pkid:this.pkid,
+          credit:0,
+          isUseCredit:0,
+          paymentType:4,
+          payRatioType:this.payInfo.payRatioType,
+          confirmCredit:false,
+          confirmTrade:true
+        })
+        this.time = 0;
+        this.$apply();
+        if(r) {
+          this.$navigate(`./paySuccess?pkid=${this.pkid}`);
+        }
+      },
+      //选择支付比例
+      radioChange(e) {
+        this.payRadio = e.detail.value;
+      },
+      //选择支付方式
+      typeChange(e) {
+        this.payType = e.detail.value;
+      },
+      submit() {
+        if(this.voucherProcessing==1){
+          this.$invoke('toast','show',{
+            message:'您有正在处理的转账凭证'
+          });
+          return;
+        }
+        let payType=0;
+        let sumPrice=0;
+        if(this.paymentStatus == 2) { //尾款
+          payType=3;
+          sumPrice=this.unpaidAmount;
+        }else if(this.payRadio == 0) {  //定金
+          payType=1;
+          sumPrice=this.advanceAmount;
+        }else if(this.payRadio == 1) {  //全款
+          payType=2;
+          sumPrice=this.goodsAmount;
+        }
+        this.$navigate(`./voucher?pkid=${this.pkid}&payType=${payType}&sumPrice=${sumPrice}`);
+      }
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/list-item";
+  .text {
+    width: 100%;
+    height: $item-height;
+    font-size:$text-nm;
+  }
+  .pay-page{
+    padding-bottom:98rpx;
+  }
+  .head-tip{
+    @include fj;
+    align-items: center;
+    background-color: $primary;
+    padding:50rpx 112rpx 60rpx 60rpx;
+    .flex1{
+      flex: 1;
+      overflow: hidden;
+      color: #fff;
+      font-size:$text-xl;
+      line-height:66rpx;
+    }
+    .icon-dengdai{
+      font-size:120rpx;
+      color: #fff;
+      margin-left:20rpx;
+    }
+  }
+  .address{
+    background-color: #fff;
+    height:132rpx;
+    display: flex;
+    align-items: center;
+    padding:15rpx 30rpx;
+    .icon-dizhi1{
+      font-size:44rpx;
+      color: #666;
+    }
+    .flex1{
+      flex: 1;
+      overflow: hidden;
+      margin-left:20rpx;
+      margin-right:30rpx;
+      .top{
+        overflow: hidden;
+        line-height:44rpx;
+        color: $dark;
+        display: flex;
+        justify-content: space-between;
+      }
+      .contacts{
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size:$text-xl;
+      }
+      .tel{
+        font-size:$text-nm;
+        margin-left:30rpx;
+      }
+      .addr{
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size:$text-nm;
+        line-height:44rpx;
+        color: #666;
+      }
+    }
+  }
+  .sec-hd{
+    padding:0 30rpx;
+    border-bottom:1rpx solid $light;
+    background-color: #fff;
+    font-size:$text-nm;
+    color: #333;
+    height:90rpx;
+    line-height:90rpx;
+  }
+  .pay-page{
+    .title{
+      padding-left:0;
+    }
+    .val{
+      color: #666;
+    }
+  }
+
+  .fixed-bottom{
+    @include fj;
+    z-index:100;
+    left:0;
+    padding-left:30rpx;
+    width: 100%;
+    height:98rpx;
+    align-items: center;
+    background-color: #fff;
+    line-height:98rpx;
+    .txt{
+      font-size:$text-nm;
+      color: $dark;
+      margin-right:20rpx;
+      white-space:nowrap;
+      overflow: hidden;
+    }
+    .flex1{
+      flex:1;
+    }
+    .price{
+      color: $danger;
+    }
+    .btn-submit{
+      width: 220rpx;
+      height:98rpx;
+      background-color: $danger;
+      color: #fff;
+      font-size:$text-nm;
+      text-align: center;
+    }
+    .dark {
+      background: #999;
+    }
+  }
+  .noopenAccount {
+    line-height: 1.5;
+    padding: 5px 10px;
+    height: 50px;
+  }
+</style>

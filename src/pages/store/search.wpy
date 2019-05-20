@@ -1,0 +1,195 @@
+<template>
+    <view class="search-page">
+      <view class="searchbox">
+        <!--<input type="search" placeholder="请输入品牌/品种/商家">-->
+        <view class="input-div">
+          <icon class="iconfont icon-fangdajing"></icon>
+          <input type="text" confirm-type="search" @confirm="submit" focus="true" placeholder-class="placeholder" placeholder="请输入品牌/品种/商家" />
+        </view>
+      </view>
+      <view class="sec-wrap">
+        <view class="sec-hd">热门搜索</view>
+        <view class="words-list">
+          <view class="word" @tap="searchWords({{item}})" wx:for="{{hotList}}" wx:key="{{index}}">{{item}}</view>
+        </view>
+      </view>
+      <view class="sec-wrap">
+        <view class="sec-hd">历史搜索</view>
+        <icon wx:if="{{historyList.length>0}}" class="iconfont icon-lajitong" @tap="del();"></icon>
+        <view class="words-list">
+          <view class="word" @tap="searchWords({{item}})" wx:for="{{historyList}}" wx:key="{{index}}">{{item}}</view>
+        </view>
+      </view>
+    </view>
+</template>
+
+<script>
+    import wepy from 'wepy'
+    import product_api from '../../api/product_module'
+    import Tips from '../../utils/Tips'
+    import { HISTORY_LIST, SEARCH_KEY } from '../../utils/Constant'
+
+    export default class Search extends wepy.page {
+        config = {
+            navigationBarTitleText: '搜索'
+        }
+
+        data = {
+          hotList:[],
+          historyList:[]
+        }
+
+        async onShow() {
+          let r = await product_api.hotsearchkey();
+          this.hotList = r.result;
+          if(wepy.getStorageSync(HISTORY_LIST) != '') {
+            this.historyList = wepy.getStorageSync(HISTORY_LIST).split(',');
+          }
+          this.$apply();
+        }
+
+        search (name) {
+          this.setHistory(HISTORY_LIST,name);
+          wepy.setStorageSync(SEARCH_KEY,name);
+          wx.reLaunch({
+            url:'./index'
+          })
+        }
+
+        //设置用户搜索记录
+        setHistory(name, val) {
+          let max=10;   //最大限制10个
+          if (!name) return;
+          if (typeof val !== 'string') {
+            val = JSON.stringify(val);
+          }
+
+          let _list = [];
+          if (wepy.getStorageSync(name) != null || wepy.getStorageSync(name) != '') {
+            _list = wepy.getStorageSync(name).split(',');
+          }
+          if (_list == null || _list == '') {
+            _list = [];
+          }
+          if (_list && _list.length > 0) {
+            var index = -1;
+            var item;
+            for (var i = 0; i < _list.length; i++) {
+              item = _list[i];
+              if (item == val) {
+                index = i;
+              }
+            }
+            if (index == -1) { //不存在，加到第一个位置上
+              _list.unshift(val);
+            } else { //存在，移动到首位
+              _list.splice(index, 1);
+              _list.unshift(val);
+            }
+            //最多十个
+            if(_list.length>max) {
+              _list=_list.slice(0,max);
+            }
+            let jsonstr = _list.join(',');
+            wepy.setStorageSync(name, jsonstr);
+          } else {
+            _list = [];
+            _list.push(val);
+            let jsonstr = _list.join(',');
+            wepy.setStorageSync(name, jsonstr);
+          }
+        }
+
+        methods = {
+          submit(e) {
+            this.search(e.detail.value);
+          },
+          //热门||历史搜索
+          searchWords(name) {
+            this.search(name);
+          },
+          //清除历史记录
+          async del() {
+            await Tips.confirm('是否清空历史记录？');
+            try {
+              wepy.removeStorageSync(HISTORY_LIST);
+              this.historyList = [];
+              this.$apply();
+            } catch (error) {
+
+            }
+          },
+        }
+
+    }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/search";
+  .search-page{
+    background-color: #fff;
+    min-height:100vh;
+  }
+  .searchbox input{
+    position: absolute;
+    left:0;
+    top:0;
+    width: 100%;
+    height:70rpx;
+    line-height:70rpx;
+    padding-left: 82rpx;
+    padding-right: 30rpx;
+    border-radius: 70rpx;
+    color: #333;
+    font-size:$text-nm;
+  }
+  .sec-wrap{
+    padding-top:20rpx;
+    padding-left:30rpx;
+    position: relative;
+    border-bottom:1rpx solid $light;
+    &:last-child{
+      border-bottom:0;
+    }
+  }
+  .sec-hd{
+    font-size:$text-nm;
+    color: $dark;
+    line-height: 44rpx;
+  }
+  .icon-lajitong{
+    position: absolute;
+    right:20rpx;
+    top:10rpx;
+    font-size:44rpx;
+    color: #999;
+    min-height:66rpx;
+    padding-right:10rpx;
+    padding-left: 10rpx;
+  }
+  .words-list{
+    width: 100%;
+    overflow: hidden;
+    margin-top:20rpx;
+  }
+  .word{
+    float: left;
+    max-width: 210rpx;
+    min-width:114rpx;
+    height: 40rpx;
+    padding-left: 20rpx;
+    padding-right: 20rpx;
+    font-size: $text-nm;
+    margin-right: 30rpx;
+    background-color: #eee;
+    color: #333;
+    line-height: 40rpx;
+    border-radius: 40rpx;
+    text-align: center;
+    margin-bottom: 32rpx;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+</style>

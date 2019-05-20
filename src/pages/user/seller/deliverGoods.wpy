@@ -1,0 +1,192 @@
+<template>
+  <view class="deliverGoods-page">
+    <div wx:if="{{isInputInfo==1}}" class="mask"></div>
+    <picker range="{{transportArr}}" @change="bindPickerChange" range-key="text">
+      <view class="list_item">
+        <view class="title">物流平台</view>
+        <view class="input">
+          <input type="text" disabled="true" placeholder="请选择" value="{{transportText}}" />
+        </view>
+        <icon class="iconfont icon-jiantouyou"></icon>
+      </view>
+    </picker>
+    <view class="list_item">
+      <view class="title">物流单号</view>
+      <view class="input">
+        <input type="text" @input="input" id="logisticsNo" value="{{input.logisticsNo}}" placeholder="请输入物流单号" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">车牌号</view>
+      <view class="input">
+        <input type="text" @input="input" id="plateNo" value="{{input.plateNo}}" placeholder="请输入车牌号" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">司机姓名</view>
+      <view class="input">
+        <input type="text" @input="input" id="driver" value="{{input.driver}}" placeholder="请输入司机姓名" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">司机手机</view>
+      <view class="input">
+        <input type="text" @input="input" id="mobile" value="{{input.mobile}}" placeholder="请输入司机联系方式" />
+      </view>
+    </view>
+    <view class="sec-cut"></view>
+    <view class="single">
+      <view @tap.stop="noWrite" class="{{isInputInfo==0?'checkbox':'checkbox checked'}}">没有物流信息</view>
+    </view>
+    <button class="greenBtn" @tap="submit">提交</button>
+    <toast />
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import common_api from "../../../api/common_module"
+  import order_api from "../../../api/order_module"
+  import { TOKEN } from "../../../utils/Constant"
+  import Tips from "../../../utils/Tips"
+  import input from '../../../mixins/input'
+  import validate from '../../../utils/Validate'
+  import Toast from '../../../components/toast'
+
+  export default class DeliverGoods extends wepy.page {
+    config = {
+      navigationBarTitleText: '确认发货'
+    };
+    mixins=[input];
+    components = {
+      toast: Toast
+    };
+    data={
+      transportArr:[],//物流平台
+      transportValue:'',
+      transportText:'',
+      input:{
+        logisticsNo:'', //物流单号
+        plateNo:'',     //车牌号
+        driver:'',      //司机姓名
+        mobile:''       //司机手机号
+      },
+      isInputInfo:0,
+      orderId:'',
+      token:''
+    }
+    onLoad(option){
+      this.orderId=option.pkid;
+    };
+    onShow(){
+      this.token=wepy.getStorageSync(TOKEN);
+      this.load();
+    };
+    async load(){
+      let r=await common_api.listlogistics();
+      this.transportArr=r.result;
+      this.$apply();
+    };
+    methods={
+      bindPickerChange(e){
+        this.transportText = this.transportArr[e.detail.value].text;
+        this.transportValue = this.transportArr[e.detail.value].value;
+      },
+      async submit(){
+        if(this.isInputInfo==0){
+          if(!this.validate()){
+            return;
+          }
+        }
+        let r=await order_api.delivery({
+          token:this.token,
+          orderId:Number(this.orderId),
+          logisticsOrderNo:this.input.logisticsNo,
+          logisticsCompanyId:Number(this.transportValue),
+          logisticsCompanyName:this.transportText,
+          driverName:this.input.driver,
+          driverMobile:this.input.mobile,
+          carLicenseNo:this.input.plateNo,
+          isInputInfo:Number(this.isInputInfo)
+        })
+        if(r){
+          Tips.toast('提交成功');
+          setTimeout(()=>{
+            wepy.navigateBack();
+          },1000);
+        }
+      },
+      noWrite(){
+        if(this.isInputInfo==1){
+          this.isInputInfo=0;
+        }else{
+          this.isInputInfo=1;
+          this.input.logisticsNo='';
+          this.input.driver='';
+          this.input.plateNo='';
+          this.input.mobile='';
+          this.transportValue='';
+          this.transportText='';
+        }
+      }
+    };
+    validate(){
+      let rules=[
+        {
+          value: this.transportValue,
+          method: 'optional',
+          message: '请选择物流平台'
+        },
+        {
+          value: this.input.logisticsNo,
+          method: 'optional',
+          message: '请输入物流单号'
+        },
+        {
+          value: this.input.plateNo,
+          method: 'optional',
+          message: '请输入车牌号'
+        },
+        {
+          value: this.input.driver,
+          method: 'optional',
+          message: '请输入司机姓名'
+        },
+        {
+          value: this.input.mobile,
+          method: 'optional',
+          message: '请输入司机手机号'
+        },
+        {
+          value: this.input.mobile,
+          method: 'tel',
+          message: '手机号码不正确'
+        },
+      ]
+      return this.check(rules)
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/mixin";
+  @import "../../../styles/components/list-item";
+  .single{
+    height:90rpx;
+    font-size:$text-nm;
+    display: flex;
+    align-items: center;
+    color: $dark;
+    background-color: #fff;
+    padding:0 30rpx;
+  }
+  .mask{
+    width: 100%;
+    height:458rpx;
+    background-color: rgba(0,0,0,.1);
+    position: absolute;
+    left:0;
+    top:0;
+    z-index:10;
+  }
+</style>

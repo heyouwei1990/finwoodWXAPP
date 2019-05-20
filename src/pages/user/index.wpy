@@ -1,0 +1,442 @@
+<template>
+  <view class="user-page">
+    <view class="user-header">
+      <image class="bg" src="../../images/user-bg.jpg" mode="scaleToFill"></image>
+      <view class="info-dl" @tap="openNew('./userInfo','')">
+        <image src="{{avatarUrl}}" mode="scaleToFill"></image>
+        <view class="info-dd">
+          <view class="user-name">{{ userName }} <text wx:if="{{personalVerifiedStatus!=2}}">{{ personalVerifiedStatusTxt }}</text></view>
+          <view class="company-name">{{ companyName }}<text wx:if="{{companyVerifiedStatus!=2}}">{{companyVerifiedStatusTxt}}</text></view>
+        </view>
+        <icon class="iconfont icon-jiantouyou"></icon>
+      </view>
+      <view class="bottom-ul">
+        <view class="bottom-li"
+        wx:if="{{isPersonalVerified!=1&&personalVerifiedStatus==0 && userName_!=null || personalVerifiedStatus==3}}"
+        @tap="openNew('./personApply','?userName={{userName}}')">
+          <image src="{{personVip}}" mode="scaleToFill"></image>
+          <text>个人认证</text>
+        </view>
+        <view class="bottom-li"
+        wx:if="{{isPersonalVerified!=1&&personalVerifiedStatus==0 && userName_==null}}"
+        @tap="writeName('请先完善个人信息')">
+          <image src="{{personVip}}" mode="scaleToFill"></image>
+          <text>个人认证</text>
+        </view>
+        <view class="bottom-li" wx:if="{{isPersonalVerified==1||personalVerifiedStatus==1 || personalVerifiedStatus==2}}">
+          <image src="{{personVip}}" mode="scaleToFill"></image>
+          <text>个人认证</text>
+        </view>
+
+
+        <view class="bottom-li"
+        wx:if="{{companyVerifiedStatus==0 && companyName_!=null || companyVerifiedStatus==3}}"
+        @tap="openNew('./companyApply','?conpanyName={{companyName}}')">
+          <image src="{{companyVip}}" mode="scaleToFill"></image>
+          <text>企业认证</text>
+        </view>
+        <view class="bottom-li"
+        wx:if="{{companyVerifiedStatus==0 && companyName_==null}}"
+        @tap="writeName('请先完善企业信息')">
+          <image src="{{companyVip}}" mode="scaleToFill"></image>
+          <text>企业认证</text>
+        </view>
+        <view class="bottom-li" wx:if="{{companyVerifiedStatus==1 || companyVerifiedStatus==2}}">
+          <image src="{{companyVip}}" mode="scaleToFill"></image>
+          <text>企业认证</text>
+        </view>
+        <view class="bottom-li">
+          <text>授信额度</text>
+          <view class="amount">0元</view>
+        </view>
+      </view>
+    </view>
+    <!-- <view class="sec-cut"></view>
+    <view class="nav-list">
+      <view class="nav-list-hd">
+        <icon class="iconfont icon-ziyuan"></icon>
+        <text>账户管理</text>
+      </view>
+      <navigator class="nav-li" url="">
+        <i class="iconfont icon-shenqingkaihu"></i>
+        <text>申请开户</text>
+      </navigator>
+      <navigator class="nav-li" url="">
+        <i class="iconfont icon-zhanghu"></i>
+        <text>资金账户</text>
+      </navigator>
+    </view> -->
+    <view class="sec-cut"></view>
+    <view class="nav-list">
+      <view class="nav-list-hd">
+        <icon class="iconfont icon-maijia"></icon>
+        <text>我是买家</text>
+      </view>
+      <view class="nav-li" @tap="openNew('./buyer/buyerOrder','')">
+        <i class="iconfont icon-dingdan"></i>
+        <text>我的订单</text>
+      </view>
+      <view class="nav-li" @tap="openNew('./buyer/collect','')">
+        <i class="iconfont icon-shoucang"></i>
+        <text>我的收藏</text>
+      </view>
+      <view class="nav-li" @tap="openNew('../store/cart','')">
+        <i class="iconfont icon-gouwuche"></i>
+        <text>我的购物车</text>
+      </view>
+      <view class="nav-li" @tap="openNew('./buyer/address','')">
+        <i class="iconfont icon-dizhi1"></i>
+        <text>收货地址</text>
+      </view>
+    </view>
+    <view class="sec-cut"></view>
+    <view class="nav-list">
+      <view class="nav-list-hd">
+        <icon class="iconfont icon-wosmaij"></icon>
+        <text>我是卖家</text>
+      </view>
+      <view class="nav-li" @tap="openNew('./seller/sellerOrder','')">
+        <i class="iconfont icon-dingdanguanli"></i>
+        <text>订单管理</text>
+      </view>
+      <view class="nav-li" @tap="check('./seller/goodsManage')">
+        <i class="iconfont icon-shangpinguanli"></i>
+        <text>商品管理</text>
+      </view>
+      <!-- <navigator class="nav-li" url="">
+        <i class="iconfont icon-shangpinguanli"></i>
+        <text>商品管理</text>
+      </navigator>
+      <navigator class="nav-li" url="">
+        <i class="iconfont icon-dianpushezhi"></i>
+        <text>店铺设置</text>
+      </navigator> -->
+      <!--<navigator class="nav-li" url="">
+        <i class="iconfont icon-tixianguanli"></i>
+        <text>提现管理</text>
+      </navigator>-->
+      <view  wx:if="{{sellerType == 1}}" class="nav-li" @tap="check('./seller/accountManage')">
+        <i class="iconfont icon-shenqingkaihu"></i>
+        <text>多账号管理</text>
+      </view>
+    </view>
+    <view wx:if="{{token!=''}}" @tap="exit()" class="switch-btn">切换账号</view>
+    <toast />
+  </view>
+</template>
+
+<script>
+import wepy from "wepy"
+import cache from "../../utils/Cache"
+import { USER_INFO, TOKEN, SEARCH_KEY } from "../../utils/Constant"
+import member_api from "../../api/member_module"
+import product_api from "../../api/product_module"
+import Toast from '../../components/toast'
+import Tips from '../../utils/Tips'
+
+export default class User extends wepy.page {
+  config = {
+    navigationBarTitleText: "我的"
+  };
+  components = {
+    toast: Toast
+  };
+
+  data = {
+    avatarUrl: "", //用户头像
+    userName:'真实姓名 (未填写)',
+    userName_:'',
+    companyName:"公司名称 (未填写)",
+    companyName_:'',
+    personalVerifiedStatus:0,
+    isPersonalVerified:0,
+    isCompanyVerified:0,
+    personalVerifiedStatusTxt:'(未认证)',
+    companyVerifiedStatus:0,
+    companyVerifiedStatusTxt:'(未认证)',
+    company:null,
+    creditLimit:0,
+    personVip:'../../images/vip.svg',
+    companyVip:'../../images/vip.svg',
+    sellerType:0,
+    token:''
+  };
+
+  onShow() {
+    wepy.removeStorageSync(SEARCH_KEY);
+    this.token = wepy.getStorageSync(TOKEN);
+    this.dataInit();
+  }
+
+  async dataInit() {
+    //头像
+    let userInfo = wepy.getStorageSync(USER_INFO);
+    this.avatarUrl = userInfo.headimg;
+    //没有登录不拿信息
+    if(this.token == '' || this.token == null) {
+      this.userName = '真实姓名 (未填写)';
+      this.companyName = "公司名称 (未填写)";
+      this.personalVerifiedStatus = 0;
+      this.isPersonalVerified = 0;
+      this.isCompanyVerified = 0;
+      this.personalVerifiedStatusTxt ='(未认证)';
+      this.companyVerifiedStatus = 0;
+      this.companyVerifiedStatusTxt = '(未认证)';
+      this.personVip ='../../images/vip.svg';
+      this.companyVip = '../../images/vip.svg';
+      this.sellerType = 0;
+      return;
+    }
+    let r = await member_api.centerinfo({
+      token: this.token
+    });
+    if(!r) return;
+    this.sellerType = r.result.sellerType;
+    if (r.result.name != null && r.result.name != '') {
+      if (r.result.isPersonalVerified == 0) {
+        switch (r.result.personalVerifiedStatus) {
+          case 0:
+            this.personalVerifiedStatusTxt = "(未认证)";
+            this.personVip = "../../images/vip.svg";
+            break;
+          case 1:
+            this.personalVerifiedStatusTxt = "(认证中)";
+            this.personVip = "../../images/vip.svg";
+            break;
+          case 2:
+            this.personalVerifiedStatusTxt = "(已认证)";
+            this.personVip = "../../images/vip_active.svg";
+            break;
+          case 3:
+            this.personalVerifiedStatusTxt = "(驳回)";
+            this.personVip = "../../images/vip.svg";
+            break;
+          default:
+            break;
+        }
+      } else {
+        this.personalVerifiedStatusTxt = "(已认证)";
+        this.personVip = "../../images/vip_active.svg";
+      }
+      this.userName = r.result.name;
+      this.userName_ = '';
+    }else {
+      this.userName = "真实姓名 (未填写)";
+      this.userName_ = null;
+    }
+    if (r.result.companyName != null && r.result.companyName != '') {
+      if (r.result.isCompanyVerified == 0) {
+        switch (r.result.companyVerifiedStatus) {
+          case 0:
+            this.companyVerifiedStatusTxt = "(未认证)";
+            this.companyVip = "../../images/vip.svg";
+            break;
+          case 1:
+            this.companyVerifiedStatusTxt = "(认证中)";
+            this.companyVip = "../../images/vip.svg";
+            break;
+          case 2:
+            this.companyVerifiedStatusTxt = "(已认证)";
+            this.companyVip = "../../images/vip_active.svg";
+            break;
+          case 3:
+            this.companyVerifiedStatusTxt = "(驳回)";
+            this.companyVip = "../../images/vip.svg";
+            break;
+          default:
+            break;
+        }
+      } else {
+        this.companyVerifiedStatusTxt = "(已认证)";
+        this.companyVip = "../../images/vip_active.svg";
+      }
+      this.companyName = r.result.companyName;
+      this.companyName_ = '';
+    } else {
+      this.companyName = "公司名称 (未填写)";
+      this.companyName_ = null;
+    }
+    this.personalVerifiedStatus = r.result.personalVerifiedStatus;
+    this.companyVerifiedStatus = r.result.companyVerifiedStatus;
+    this.isPersonalVerified = r.result.isPersonalVerified;
+    this.isCompanyVerified = r.result.isCompanyVerified;
+    this.company = r.result.companyName;
+    this.creditLimit = r.result.creditLimit;
+    this.$apply();
+  }
+
+  methods = {
+    exit() {
+      Tips.confirm('是否切换当前帐号?').then(async()=>{
+        let r = await member_api.logout({
+          token:this.token
+        })
+        if(r) {
+          wepy.removeStorageSync(TOKEN);
+          this.$navigate('/pages/login/login?autoLogin=1');
+        }
+      }).catch(()=>{
+
+      })
+    },
+    openNew(url,parms) {
+      if (!cache.isLogin()) return;
+      this.$navigate(url+parms);
+    },
+    async check(url) {
+      let r = await product_api.judgementshop({
+        token:this.token
+      })
+      if(r) {
+        if(r.result.companyVerifyStatus == 2 && r.result.hasShop ==1) {
+          this.$navigate(url);
+        }else {
+          this.$invoke('toast', 'show', {
+            message:'请先完成企业认证并且开通店铺',
+          });
+        }
+      }
+    },
+    writeName(value) {
+      this.$invoke('toast', 'show', {
+        message:value,
+      });
+      setTimeout(()=>{
+        this.$navigate('./userInfo');
+      },1000)
+    }
+  };
+}
+</script>
+
+<style lang="scss">
+@import "../../styles/mixin";
+.switch-btn{
+  width: 100%;
+  text-align: center;
+  line-height:80rpx;
+  height:80rpx;
+  background-color: #fff;
+  font-size:16px;
+  color: $primary;
+  margin:10px 0;
+}
+.user-header {
+  width: 100%;
+  height: 370rpx;
+  position: relative;
+  .bg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .info-dl {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    height: 230rpx;
+    padding: 36rpx 30rpx 66rpx 42rpx;
+    image {
+      display: block;
+      width: 118rpx;
+      height: 118rpx;
+      border: 5rpx solid rgba(255, 255, 255, 0.4);
+      border-radius: 50%;
+      margin-right: 48rpx;
+      overflow: hidden;
+    }
+  }
+  .info-dd {
+    flex: 1;
+    overflow: hidden;
+    color: #fff;
+    font-size: $text-nm;
+    line-height: 52rpx;
+  }
+  .icon-jiantouyou {
+    color: #fff;
+    font-size: 36rpx;
+  }
+  .bottom-ul {
+    @include fj;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.1);
+    width: 100%;
+    height: 140rpx;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    z-index: 2;
+    padding: 20rpx 0;
+  }
+  .bottom-li {
+    width: 33.33%;
+    border-right: 1rpx solid $light;
+    overflow: hidden;
+    color: #fff;
+    font-size: $text-xl;
+    text-align: center;
+    &:last-child {
+      border-right: 0;
+    }
+    text {
+      vertical-align: middle;
+      line-height: 48rpx;
+    }
+    .amount {
+      font-size: $text-xxl;
+      line-height: 44tpx;
+    }
+    image {
+      width: 44rpx;
+      height: 44rpx;
+      margin-right: 12rpx;
+      vertical-align: middle;
+    }
+  }
+}
+.nav-list {
+  background-color: #fff;
+  text {
+    display: inline-block;
+    vertical-align: middle;
+  }
+}
+.nav-list-hd {
+  font-size: $text-xl;
+  color: $dark;
+  height: 98rpx;
+  padding: 25rpx 30rpx;
+  line-height: 48rpx;
+  border-bottom: 1rpx solid $light;
+  .iconfont {
+    color: $primary;
+    font-size: 40rpx;
+    margin-right: 20rpx;
+    vertical-align: middle;
+    margin-top: -3px;
+  }
+}
+.nav-li {
+  display: flex;
+  align-items: center;
+  font-size: $text-nm;
+  color: #666;
+  height: 90rpx;
+  padding: 21rpx 30rpx;
+  line-height: 48rpx;
+  border-bottom: 1rpx solid $light;
+  &:last-child {
+    border-bottom: 0;
+  }
+  .iconfont {
+    color: #999;
+    font-size: 40rpx;
+    margin-right: 20rpx;
+    vertical-align: middle;
+  }
+}
+</style>

@@ -1,0 +1,104 @@
+<template>
+  <view class="page-success">
+    <view class="success-hd">
+      <icon class="iconfont icon-chenggong"></icon>
+      <text>提交审核成功</text>
+    </view>
+    <view class="tip-important">审核结果将通过手机短信的方式告知，敬请留意</view>
+    <view class="mid-left">
+      <view class="notice">客服电话：<view class="tel" @tap="makePhoneCall()">{{tel}}</view></view>
+      <view class="notice">工作时间：9:00-18:00 <text>（全年无休）</text></view>
+    </view>
+    <button @tap="back()" class="greenBtn">{{text}}</button>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import { GLOBAL_INFO } from "../../utils/Constant"
+
+  export default class Success extends wepy.page {
+    config = {
+      navigationBarTitleText: '提交成功'
+    }
+
+    data = {
+      text:'',
+      page:1,
+      tel:wepy.getStorageSync(GLOBAL_INFO).serviceTel
+    }
+
+    onLoad({text,page}) {
+      this.text=text;
+      this.page=Number(page);
+    }
+
+    onUnload() {
+      wepy.navigateBack();
+    }
+
+    methods = {
+      back() {
+        wx.navigateBack({
+          delta: this.page
+        })
+      },
+      makePhoneCall() {
+        wepy.$instance.globalData.makePhoneCall();
+      }
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/list-item";
+  .page-success{
+    position: fixed;
+    left:0;
+    top:0;
+    width: 100%;
+    height:100%;
+    background-color: #fff;
+    padding:44rpx 30rpx 88rpx;
+    text-align: center;
+  }
+  .success-hd{
+    margin-bottom: .26667rem;
+    .iconfont{
+      vertical-align: middle;
+      font-size:88rpx;
+      color: $primary;
+      margin-right:16rpx;
+    }
+    text{
+      display: inline-block;
+      vertical-align: middle;
+      color: $dark;
+      font-size: $text-xxl;
+      line-height: 56rpx;
+      font-weight:700;
+    }
+  }
+  .tip-important{
+    font-size:$text-nm;
+    color: $danger;
+    line-height:1.5;
+    margin-bottom:20rpx;
+  }
+  .mid-left{
+    display: inline-block;
+    max-width:100%;
+    text-align: left;
+    font-size: $text-nm;
+    line-height: 48rpx;
+    color: $dark;
+    .tel{
+      color: $blue;
+      display: inline-block;
+    }
+    text{
+      color: #999;
+    }
+  }
+</style>

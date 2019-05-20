@@ -1,0 +1,191 @@
+<template>
+  <view class="page-accountManage">
+    <view class="account-list" @touchstart="move">
+      <view class="account-li" wx:for="{{list}}" wx:key="{{item.bindPkid}}" wx:index="{{index}}">
+        <view class="swipe-item-wrapper">
+          <view
+            animation="{{animationData}}"
+            data-index="{{index}}"
+            class="swipe-content"
+            style="left:{{item.left == 0 ? '0' : item.left + 'rpx'}};"
+            @touchstart="ts" @touchmove="tm" @touchend="te">
+            <view class="account-dl">
+              <!--<view class="account-dt"><img src="{{item.url}}" alt=""></view>-->
+              <view class="account-dd">
+                <view class="top">
+                  <view class="account-no">{{item.mobile}}</view>
+                  <view class="account-title" wx:if="{{item.name!=null}}">{{item.name}}</view>
+                </view>
+              </view>
+            </view>
+          </view>
+          <view class="swipe-actions actions-right">
+            <view class="swipe-btn del" @tap.stop="delItem({{item.bindPkid}})">删除</view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <navigator url="./accountEdit" type="primary" class="greenBtn">添加新成员</navigator>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import Tips from "../../../utils/Tips"
+  import { TOKEN } from '../../../utils/Constant'
+  import Toast from '../../../components/toast'
+  import member_api from "../../../api/member_module"
+
+  export default class HotBuy extends wepy.page {
+    config = {
+      navigationBarTitleText: '多账号管理'
+    };
+    components={
+      toast:Toast
+    }
+    data={
+      token:'',
+      animationData: {},  //删除动画
+      list:[]
+    };
+    onLoad() {
+      this.animation = wx.createAnimation({
+        duration: 100,
+      })
+      this.animationData=this.animation.export();
+    };
+    onShow(){
+      this.token=wepy.getStorageSync(TOKEN);
+      this.load();
+    };
+    async load(){
+      let r=await member_api.listshopmember({
+        token:this.token
+      })
+      if(r){
+        this.list=r.result;
+      }
+      this.$apply();
+    };
+    methods={
+      ts(e) {
+        if (e.touches.length === 1) {
+          this.startX = e.touches[0].clientX
+          this.moveX = e.touches[0].clientX
+        }
+      },
+      tm(e) {
+        if (e.touches.length === 1) {
+          // 手指起始点位置与移动期间的差值
+          var distenceX = this.moveX - e.touches[0].clientX
+          this.moveX = e.touches[0].clientX;
+          let index = e.currentTarget.dataset.index;
+          let swipeData = this.list[index].left;
+          if(swipeData==undefined){
+            swipeData=0;
+          }
+          if ((swipeData - distenceX) < -140) {
+            this.list[index].left = -140
+          } else if ((swipeData - distenceX) > 0) {
+            this.list[index].left = 0
+          } else {
+            this.list[index].left = swipeData - distenceX
+          }
+        }
+      },
+      te(e) {
+        if (e.changedTouches.length === 1) {
+          let index = e.currentTarget.dataset.index;
+          let swipeData = this.list[index].left;
+          if (swipeData <= -70) {
+            this.list[index].left = -140
+          } else {
+            this.list[index].left = 0
+          }
+        }
+      },
+      move() {
+        for(let i=0;i<this.list.length;i++) {
+          if(this.list[i].style==-140){
+            this.animation.left(0).step();
+            this.animationData=this.animation.export();
+            this.list[i].style=0;
+          }
+        }
+      },
+      async delItem(pkid){
+        await Tips.confirm('您是否确认删除该成员？');
+        try{
+          member_api.shopmemberdel({
+            token:this.token,
+            bindPkid:pkid
+          })
+          this.load();
+        }catch(e){
+
+        }
+      }
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/mixin";
+  @import "../../../styles/components/swipe-item-wrapper";
+.page-accountManage{
+  .swipe-item-wrapper{
+    height:auto;
+  }
+  .swipe-content{
+    position: relative;
+  }
+  .account-list>li{
+    border-bottom:1px solid $light;
+  }
+  .account-dl{
+    @include fj();
+    width: 100%;
+    align-items: center;
+    padding:30rpx 12rpx;
+    background-color: #fff;
+  }
+  .account-dt{
+    width: 108rpx;
+    height:108rpx;
+    border-radius: 50%;
+    background-color: #eee;
+    margin-right:24rpx;
+    overflow: hidden;
+  }
+  .account-dt>img{
+    width: 100%;
+    height:100%;
+    border-radius: 50%;
+  }
+  .account-dd{
+    flex: 1;
+    .top{
+      @include fj;
+      font-size:$text-nm;
+      color: $dark;
+      line-height:48rpx;
+    }
+  }
+  .account-mark{
+    color: #999;
+    font-size:$text-nm;
+    line-height:48rpx;
+  }
+  .greenBtn{
+    display: block;
+    background-color: $primary;
+    color: #fff;
+    margin: 40rpx 30rpx;
+    font-size:$text-xl;
+    height:90rpx;
+    line-height:90rpx;
+    text-align: center;
+    border-radius: 8rpx;
+  }
+}
+</style>

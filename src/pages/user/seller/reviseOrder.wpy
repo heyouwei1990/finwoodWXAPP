@@ -1,0 +1,133 @@
+<template>
+  <view class="reviseOrder-page">
+    <view class="list_item">
+      <view class="title">修改数量</view>
+      <view class="input">
+        <input type="number" @input="input" id="quantity" value="{{input.quantity}}" maxlength="5" placeholder="请输入数量" />
+      </view>
+      <view class="unitTxt">{{quantityUnit}}</view>
+    </view>
+    <view class="list_item">
+      <view class="title">修改价格</view>
+      <view class="input">
+        <input type="number" @input="input" id="price" value="{{input.price}}" maxlength="8" placeholder="请输入价格" />
+      </view>
+      <view class="unitTxt">元</view>
+    </view>
+    <button class="greenBtn" @tap="revise">确定</button>
+    <toast />
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import order_api from "../../../api/order_module"
+  import { TOKEN } from "../../../utils/Constant"
+  import Tips from "../../../utils/Tips"
+  import input from '../../../mixins/input'
+  import validate from '../../../utils/Validate'
+  import Toast from '../../../components/toast'
+
+  export default class ReviseOrder extends wepy.page {
+    config = {
+      navigationBarTitleText: '修改订单'
+    };
+    mixins=[input];
+    components = {
+      toast: Toast
+    };
+    data={
+      input:{
+        price:'',
+        quantity:'',
+      },
+      quantityUnit:'m³',
+      orderId:'',
+      pkid:'',
+      stock:0,
+      token:''
+    };
+    onLoad(option){
+      this.token=wepy.getStorageSync(TOKEN);
+      this.orderId=option.orderId;
+      this.pkid=option.pkid;
+      this.quantityUnit=option.unitText;
+      this.input.quantity=option.quantity;
+      this.input.price=option.salesPrice;
+      this.stock=option.productStockNum;
+    };
+    methods={
+      async revise(){
+        if(!this.validate()){
+          return;
+        }
+        if(Number(this.input.quantity) > this.stock) {
+          this.$invoke('toast', 'show', {
+            message:'数量不能大于库存量',
+          });
+          this.input.quantity = this.stock;
+          this.$apply();
+          return;
+        }
+        let r1=await order_api.updateqty({
+          token:this.token,
+          orderId:Number(this.orderId),
+          orderItemId:Number(this.pkid),
+          quantity:Number(this.input.quantity)
+        })
+        if(!r1) {
+          return;
+        }
+        let r2=await order_api.updateprice({
+          token:this.token,
+          orderId:Number(this.orderId),
+          orderItemId:Number(this.pkid),
+          salePrice:Number(this.input.price)
+        })
+        if(r2){
+          Tips.toast('修改成功');
+          setTimeout(()=>{
+            wepy.navigateBack();
+          },1000);
+        }
+      },
+    };
+    validate(){
+      let rules=[
+        {
+          value: this.input.quantity,
+          method: 'optional',
+          message: '请输入数量'
+        },
+        {
+          value: this.input.quantity,
+          method: 'amount',
+          message: '数量为正整数'
+        },
+        {
+          value: this.input.price,
+          method: 'optional',
+          message: '请输入价格'
+        },
+        {
+          value: this.input.price,
+          method: 'max',
+          param:1000000,
+          message: '价格输入过高'
+        }
+      ]
+      return this.check(rules);
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/mixin";
+  @import "../../../styles/components/list-item";
+  .unitTxt{
+    font-size:28rpx;
+    color: #333;
+    width: 56rpx;
+    text-align: center;
+  }
+</style>

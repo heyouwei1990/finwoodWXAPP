@@ -1,0 +1,44 @@
+@import "../mixin";
+.collapse-wrap{
+  .mark {
+    display: inline-block;
+    width: 3px;
+    height: 32rpx;
+    background-color: $primary;
+    position: relative;
+    top: 2px;
+  }
+  .collapse-dl{
+    background-color: #fff;
+    width: 100%;
+  }
+  .collapse-dt{
+    @include fj;
+    align-items: center;
+    height:90rpx;
+    padding:0 20rpx;
+    border-bottom:1rpx solid $light;
+  }
+  .collapse-title{
+    flex:1;
+    font-size:$text-xl;
+    color: $dark;
+  }
+  .collapse-dd{
+    overflow: hidden;
+    transition: opacity 0.4s linear 0.1s;
+    height:0;
+  }
+  .icon-jiantouyou{
+    transition: all 0.4s;
+    font-size:36rpx;
+    line-height:48rpx;
+    color: #999;
+  }
+  .collapse-dl.active .collapse-dd{
+    height:auto;
+  }
+  .collapse-dl.active .collapse-dt .icon-jiantouyou{
+    transform: rotate(90deg);
+  }
+}

@@ -1,0 +1,77 @@
+<template>
+  <view class="applyDetail">
+    <view class="list_item">
+      <view class="title">品种</view>
+      <view class="input">
+        <view class="val">小斑马</view>
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">数量</view>
+      <view class="input">
+        <view class="val">2000m³</view>
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">规格</view>
+      <view class="input">
+        <view class="val">200mm*400mm*8000mm</view>
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">交货地</view>
+      <view class="input">
+        <view class="val">上海</view>
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">双方议价</view>
+      <view class="input">
+        <view class="val">是</view>
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">联系人</view>
+      <view class="input">
+        <view class="val">王五</view>
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">联系电话</view>
+      <view class="input">
+        <view class="val">400 180 6255</view>
+      </view>
+      <view class="hot-tel">联系客服</view>
+    </view>
+    <view class="list_item">
+      <view class="title align-top">其他要求</view>
+      <view class="input">
+        <view class="text-val">家里的塞多年色粉veryGV二个人官方群为否而我却发个如果re二个而全国分为个人个very个本期稳如狗废弃物如果放弃而我</view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class SupplyDetail extends wepy.page {
+    config = {
+      navigationBarTitleText: '供货详情'
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/list-item";
+  .hot-tel{
+    color: #fff;
+    width: 144rpx;
+    height:48rpx;
+    line-height:48rpx;
+    text-align: center;
+    border-radius: 48rpx;
+    background-color: $primary;
+  }
+</style>

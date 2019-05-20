@@ -1,0 +1,142 @@
+<template>
+    <view class="applyLoan-page">
+      <picker range="{{loanType}}" @change="loanChange" range-key="text">
+        <view class="list_item">
+          <view class="title"><i>*</i>贷款种类</view>
+          <view class="input">
+            <input type="text" disabled="true" placeholder="请选择贷款种类" value="{{loanStyle}}" />
+          </view>
+          <icon class="iconfont icon-jiantouyou"></icon>
+        </view>
+      </picker>
+      <view class="list_item">
+        <view class="title"><i>*</i>申请人</view>
+        <view class="input">
+          <input type="text" @input="input" disabled value="{{input.applicant}}" id="applicant" placeholder="请输入申请人"  />
+        </view>
+      </view>
+      <view class="list_item">
+        <view class="title"><i>*</i>申请金额</view>
+        <view class="input">
+          <input type="number" maxlength="7"  @input="input" value="{{input.applyAmount}}" id="applyAmount" placeholder="请输入申请金额"  />
+        </view>
+      </view>
+      <view class="list_item">
+        <view class="title"><i>*</i>联系方式</view>
+        <view class="input">
+          <input type="text" disabled value="{{input.mobile}}" placeholder="请输入联系方式"  />
+        </view>
+      </view>
+      <view class="contact-tel" @tap="makePhoneCall();">咨询电话：{{hotTel}}</view>
+      <button class="greenBtn" @tap="submit">提交申请</button>
+      <toast />
+    </view>
+</template>
+
+<script>
+    import wepy from 'wepy'
+    import { TOKEN, GLOBAL_INFO } from "../../utils/Constant"
+    import validate from '../../utils/Validate'
+    import input from '../../mixins/input'
+    import member_api from "../../api/member_module"
+    import data_api from "../../api/data_module"
+    import Tips from "../../utils/Tips"
+    import Toast from '../../components/toast'
+
+    export default class ApplyLoan extends wepy.page {
+        config = {
+            navigationBarTitleText: '申请贷款'
+        };
+        mixins=[input];
+        components = {
+          toast: Toast
+        };
+        data={
+          loanType:[],
+          token:'',
+          loanStyle:'',
+          loanValue:'',
+          input:{
+            applicant:'',
+            applyAmount:'',
+            mobile:''
+          },
+          hotTel:''
+        };
+
+        onLoad(options) {
+          this.loanStyle=options.text;
+          this.loanValue=options.type;
+        }
+
+        async onShow(){
+          this.token=wepy.getStorageSync(TOKEN);
+          let info=wepy.getStorageSync(GLOBAL_INFO);
+          this.loanType=info.lstLoanType;
+          this.hotTel=info.serviceTel;
+          this.load();
+        };
+        async load(){
+          let r=await member_api.info({
+            token:this.token
+          })
+          this.input.applicant=r.result.name;
+          this.input.mobile=r.result.mobile;
+          this.$apply();
+        };
+        methods={
+          loanChange(e){
+            this.loanStyle = this.loanType[e.detail.value].text;
+            this.loanValue = this.loanType[e.detail.value].value;
+          },
+          async submit(){
+            if(!this.validate()){
+              return;
+            }
+            let r=await data_api.applyloan({
+              token:this.token,
+              contactMobile:this.input.mobile,
+              contactName:this.input.applicant,
+              loanAmount:Number(this.input.applyAmount),
+              loanType:Number(this.loanValue)
+            })
+            if(r){
+              Tips.toast('提交成功');
+              setTimeout(()=>{
+                wepy.navigateBack();
+              },1000);
+            }
+          },
+          makePhoneCall() {
+            wepy.$instance.globalData.makePhoneCall();
+          }
+        };
+        validate(){
+          let rules=[
+            {
+              value: this.input.applyAmount,
+              method: 'optional',
+              message: '请输入申请金额'
+            },
+            {
+              value: this.input.applyAmount,
+              method: 'amount',
+              message: '金额请输入正整数'
+            },
+          ]
+          return this.check(rules)
+        }
+    }
+</script>
+
+<style lang="scss">
+  @import "../../styles/components/list-item";
+  .contact-tel{
+    color: #666;
+    height:90rpx;
+    padding:21rpx 30rpx;
+    line-height:48rpx;
+    font-size:$text-nm;
+  }
+
+</style>

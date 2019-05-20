@@ -1,0 +1,133 @@
+<template>
+  <view class="collect-page">
+    <view class='goods-list' wx:if="{{items.length>0}}">
+      <navigator url="../../store/detail?pkid={{item.pkid}}" hover-class="none" class='goods-li' wx:for="{{items}}" wx:key="{{index}}">
+        <view class='goods-dl'>
+          <view class='goods-dt'>
+            <image src="{{item.imageUrl}}" @error="binderrorimg" data-errorimg="{{index}}"></image>
+          </view>
+          <view class='goods-dd'>
+            <text class='desc'>{{item.productName}}</text>
+            <view class='seller'>
+              <text>{{ item.companyName }}</text>
+              <icon class='iconfont icon-renzheng'></icon>
+            </view>
+            <view class='li-bottom'>
+              <text class='price' wx:if="{{item.salesPrice && item.salesPrice!=0}}">￥{{item.salesPrice}}</text>
+              <text class='price' wx:if="{{item.salesPrice==0}}">面议</text>
+              <view class='btn-cancel' catchtap="removeFav({{item.pkid}})">取消收藏</view>
+            </view>
+          </view>
+        </view>
+      </navigator>
+    </view>
+    <!--加载更多时动画-->
+    <bottomLoadMore :show.sync="showLoading" message="加载中..."></bottomLoadMore>
+    <!--暂无数据显示-->
+    <noMore :show.sync="is_noMore" message="没有更多数据了"></noMore>
+    <view class="no-data" wx:if="{{items.length==0&&ajax}}">
+      <image  src="../../../images/nodata/noFav.png" mode="aspectFit"></image>
+      <view class="descp">目前没有任何收藏</view>
+      <navigator hover-class="none" class="goto" open-type="switchTab" url="/pages/store/index">快去逛逛吧</navigator>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import { TOKEN } from "../../../utils/Constant"
+  import member_api from "../../../api/member_module"
+  import product_api from "../../../api/product_module"
+  import BottomLoadMore from "../../../components/bottomLoadMore"
+  import NoMore from "../../../components/noMore"
+  import Tips from "../../../utils/Tips.js"
+
+  export default class Collect extends wepy.page {
+    config = {
+      navigationBarTitleText: '我的收藏',
+      enablePullDownRefresh:true
+    };
+    components={
+      bottomLoadMore: BottomLoadMore,
+      noMore: NoMore
+    };
+    data={
+      token:'',
+      items:[], //收藏列表
+      showLoading:true,
+      is_noMore:false,
+      pageIndex:1, //当前页
+      pageCount:1,  //总页数
+      ajax:false
+    };
+    async onShow(){
+      this.token=wepy.getStorageSync(TOKEN);
+      this.load();
+    };
+    async load(){
+      this.showLoading=true;
+      this.is_noMore=false;
+      this.ajax=false;
+      let r=await member_api.listfavorite({
+        token:this.token,
+        pageIndex:this.pageIndex,
+      })
+      this.showLoading=false;
+      if(this.pageIndex>1){
+        this.items=this.items.concat(r.result.list);
+      }else{
+        this.items=r.result.list;
+      }
+      this.pageIndex=r.result.paging.pageIndex;
+      this.pageCount=r.result.paging.pageCount;
+      if(this.pageIndex==this.pageCount){
+        this.is_noMore=true;
+      }
+      this.ajax=true;
+      this.$apply();
+    };
+    onPullDownRefresh(){
+      setTimeout(async ()=>{
+        this.pageIndex=1;
+        await this.load();
+        wepy.stopPullDownRefresh();
+      },1000)
+    };
+    async onReachBottom(){
+      if(!this.is_noMore){
+        this.pageIndex++;
+        this.load();
+      }
+    };
+    methods={
+      binderrorimg:(e)=>{
+        let index= e.target.dataset.errorimg //获取循环的下标
+        this.items[index].imageUrl="../../../images/nopic.jpg";
+      },
+      async removeFav(pkid){
+        let r=await product_api.collect({
+          token:this.token,
+          pkid:pkid,
+        })
+        Tips.success('取消收藏成功');
+        this.load();
+      }
+    }
+
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/mixin";
+  @import "../../../styles/components/goods-list";
+  .btn-cancel{
+    width: 140rpx;
+    height:44rpx;
+    text-align: center;
+    border-radius: 50rpx;
+    line-height:42rpx;
+    border: 1rpx solid #ccc;
+    font-size:$text-xs;
+    color: #666;
+  }
+</style>

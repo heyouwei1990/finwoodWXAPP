@@ -1,0 +1,149 @@
+<template>
+  <view>
+    <view class="list_item">
+      <view class="title"><i>*</i>真实姓名</view>
+      <view class="input">
+        <input type="text" disabled placeholder="请输入您的真实姓名" value="{{userName}}" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title"><i>*</i>身份证号</view>
+      <view class="input">
+        <input type="idcard" placeholder="请输入您的身份证号" @input="input" id="idcard" value="{{input.idcard}}" />
+      </view>
+    </view>
+    <view class="upload">
+      <view class="title"><i>*</i>身份证正面和反面</view>
+      <view class="img">
+        <image @tap="chooseImage(0);" src="{{preview[0]}}"></image>
+        <image @tap="chooseImage(1);" src="{{preview[1]}}"></image>
+      </view>
+    </view>
+    <button wx:if="!isVerified" class="greenBtn" @tap="submit();">提交审核</button>
+    <toast />
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import upload from '../../utils/Upload'
+  import { TOKEN } from "../../utils/Constant";
+  import validate from '../../utils/Validate'
+  import input from '../../mixins/input'
+  import member_api from '../../api/member_module'
+  import Toast from '../../components/toast'
+
+  export default class PersonApply extends wepy.page {
+    config = {
+      navigationBarTitleText: '个人认证'
+    }
+    mixins = [input];
+    components = {
+      toast: Toast
+    };
+
+    data = {
+      preview: [
+        //身份证正反面
+        "../../images/upload/IDnumber2.png",
+        "../../images/upload/IDnumber1.png"
+      ],
+      uploadUrl: ['',''],    //上传所需图片地址,变量名固定
+      userName:'',
+      input:{
+        idcard:''
+      },
+      token:'',
+      isVerified: false, //是否通过
+      ajax:false
+    }
+
+    onLoad({userName}) {
+      this.userName=userName;
+    }
+
+    onShow() {
+      this.token=wepy.getStorageSync(TOKEN);
+      this.load();
+    }
+
+    async load() {
+      if(this.ajax) {
+        return;
+      }
+      let r = await member_api.presonalauthen({
+        token:this.token
+      })
+      if(r.result.isVerified!=null){
+        this.username = r.result.authResult.memberName;
+        this.input.idcard = r.result.authResult.idCardNumber;
+        if(r.result.authResult.idCardFrontUrl != '' && r.result.authResult.idCardFrontUrl != null) {
+          this.preview[0] = r.result.authResult.idCardFrontUrl;
+        }
+        if(r.result.authResult.idCardBackUrl != '' && r.result.authResult.idCardBackUrl != null) {
+          this.preview[1] = r.result.authResult.idCardBackUrl;
+        }
+        this.isVerified = r.result.isVerified;
+      }
+      this.ajax = true;
+      this.$apply();
+    }
+
+    methods = {
+      //调起相机相册
+      chooseImage(index) {
+        upload.minigramupload(this,index,{
+          type:1,
+          isThumb:0
+        });
+      },
+      async submit() {
+        if (!this.validate()) {
+          return;
+        }
+        let r =await member_api.personalapply({
+          token: this.token,
+          realName: this.userName,
+          identifyCode: this.input.idcard,
+          cardFrontUrl: this.uploadUrl[0],
+          cardBackUrl: this.uploadUrl[1]
+        })
+        if(r) {
+          this.$navigate('./success?text=返回账户信息&page=2');
+        }
+      }
+    }
+
+    validate() {
+      const rules = [
+        {
+          value: this.input.idcard,
+          method: 'optional',
+          message: '请输入身份证号码'
+        },
+        {
+          value: this.input.idcard,
+          method: 'idcard',
+          message: '身份证号码格式不正确'
+        },
+        {
+          value: this.uploadUrl[0],
+          method: 'optional',
+          message: '请上传身份证正面'
+        },
+        {
+          value: this.uploadUrl[1],
+          method: 'optional',
+          message: '请上传身份证反面'
+        }
+      ];
+      return this.check(rules);
+    }
+
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/list-item";
+</style>

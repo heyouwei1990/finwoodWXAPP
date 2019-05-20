@@ -1,0 +1,63 @@
+<template>
+  <view class="corporationInfo">
+    <view class="list_item">
+      <view class="title">法人姓名</view>
+      <view class="input">
+        <input type="text" placeholder="请输入法人的真实姓名" value="" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">法人手机号</view>
+      <view class="input">
+        <input type="text" placeholder="请输入法人的手机号码" value="" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">法人邮箱</view>
+      <view class="input">
+        <input type="text" placeholder="请输入法人的联系邮箱" value="" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">法人身份证号</view>
+      <view class="input">
+        <input type="text" placeholder="请输入法人的真实身份证号码" value="" />
+      </view>
+    </view>
+    <picker range="{{array}}" bindchange="bindPickerChange();" bindtap="selectSort(0);">
+      <view class="list_item">
+        <view class="title">证件起始日期</view>
+        <view class="input">
+          <input type="text" placeholder="请选择" value="" />
+        </view>
+        <icon class="iconfont icon-jiantouyou"></icon>
+      </view>
+    </picker>
+    <picker range="{{array}}" bindchange="bindPickerChange();" bindtap="selectSort(0);">
+      <view class="list_item">
+        <view class="title">证件截止日期</view>
+        <view class="input">
+          <input type="text" placeholder="请选择" value="" />
+        </view>
+        <icon class="iconfont icon-jiantouyou"></icon>
+      </view>
+    </picker>
+    <button class="greenBtn">保存</button>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class CorporationInfo extends wepy.page {
+    config = {
+      navigationBarTitleText: '法人信息'
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/mixin";
+  @import "../../../styles/components/list-item";
+
+</style>

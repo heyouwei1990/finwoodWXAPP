@@ -1,0 +1,117 @@
+<template>
+    <view class="requireDetail">
+      <view class="list_item">
+        <view class="title">品种</view>
+        <view class="input">
+          <view class="val">{{detail.varietyName}}</view>
+        </view>
+      </view>
+      <view class="list_item">
+        <view class="title">数量</view>
+        <view class="input">
+          <view class="val">{{detail.quantity}}{{unitName}}</view>
+        </view>
+      </view>
+      <view class="list_item">
+        <view class="title">规格</view>
+        <view class="input">
+          <view class="val">{{detail.specification}}</view>
+        </view>
+      </view>
+      <view class="list_item">
+        <view class="title">交货地</view>
+        <view class="input">
+          <view class="val">{{detail.deliveryAddress}}</view>
+        </view>
+      </view>
+      <view class="list_item">
+        <view class="title">意向价格</view>
+        <view class="input">
+          <view class="val" wx:if="{{detail.purchasePrice==0}}">面议</view>
+          <view class="val" wx:if="{{detail.purchasePrice!=0}}">{{detail.purchasePrice}}元</view>
+        </view>
+      </view>
+      <!--<view class="list_item">
+        <view class="title">双方议价</view>
+        <view class="input">
+          <view class="val">{{detail.valid==1?'是':'否'}}</view>
+        </view>
+      </view>-->
+      <view class="list_item">
+        <view class="title">联系人</view>
+        <view class="input">
+          <view class="val">{{detail.contact}}</view>
+        </view>
+      </view>
+      <view class="list_item">
+        <view class="title">联系电话</view>
+        <view class="input">
+          <view class="val">{{tel}}</view>
+        </view>
+        <view class="hot-tel" @tap="makePhoneCall">联系客服</view>
+      </view>
+      <view class="list_item">
+        <view class="title align-top">其他要求</view>
+        <view class="input">
+          <view class="text-val">{{detail.details}}</view>
+        </view>
+      </view>
+      <navigator url="./supply?pkid={{pkid}}" hover-class="none" class="greenBtn">我要供货</navigator>
+    </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import data_api from '../../api/data_module'
+  import { GLOBAL_INFO } from "../../utils/Constant";
+
+  export default class RequireDetail extends wepy.page {
+    config = {
+      navigationBarTitleText: '求购详情'
+    };
+    data={
+      pkid:0,
+      detail:{},
+      tel:"",
+      unitName:''
+    };
+    onLoad({pkid,unitName}){
+      this.pkid=Number(pkid);
+      this.unitName=unitName;
+      this.tel=wepy.getStorageSync(GLOBAL_INFO).serviceTel;
+      this.load();
+    }
+    onShow(){
+      this.load();
+    };
+    async load(){
+      let r=await data_api.inquirydetail({
+        pkid:this.pkid
+      })
+      this.detail=r.result;
+      this.$apply();
+    };
+    methods={
+      makePhoneCall(){
+        wepy.$instance.globalData.makePhoneCall();
+      }
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/list-item";
+  .hot-tel{
+    color: #fff;
+    width: 144rpx;
+    height:48rpx;
+    line-height:48rpx;
+    text-align: center;
+    border-radius: 48rpx;
+    background-color: $primary;
+  }
+  .greenBtn{
+    border-radius: 4px;
+  }
+</style>

@@ -1,0 +1,19 @@
+<template>
+  <view>
+
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class EditShareholder extends wepy.page {
+    config = {
+      navigationBarTitleText: ''
+    }
+  }
+</script>
+
+<style lang="scss">
+
+</style>

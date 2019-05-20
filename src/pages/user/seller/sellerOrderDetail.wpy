@@ -1,0 +1,241 @@
+<template>
+  <view class="orderDetail-page">
+    <view wx:if="{{detail.status==5}}" class="header">
+      <icon class="iconfont icon-jiaoyichenggongziyuan"></icon>
+      <text>交易成功</text>
+    </view>
+    <view wx:if="{{detail.status==1}}" class="header">
+      <icon class="iconfont icon-daifukuan-copy"></icon>
+      <text>待付款</text>
+    </view>
+    <view wx:if="{{detail.status==2}}" class="header">
+      <icon class="iconfont icon-iconfontcolor65"></icon>
+      <text>已付定金</text>
+    </view>
+    <view wx:if="{{detail.status==3}}" class="header">
+      <icon class="iconfont icon-iconfontcolor65"></icon>
+      <text>已付全款</text>
+    </view>
+    <view wx:if="{{detail.status==6}}" class="header">
+      <icon class="iconfont icon-tuikuan"></icon>
+      <text>退款中</text>
+    </view>
+    <view wx:if="{{detail.status==7}}" class="header">
+      <icon class="iconfont icon-jiaoyichenggong"></icon>
+      <text>已退款</text>
+    </view>
+    <view wx:if="{{detail.status==4}}" class="header">
+      <icon class="iconfont icon-yifahuo"></icon>
+      <text>已发货</text>
+    </view>
+    <view wx:if="{{detail.status==8}}" class="header">
+      <icon class="iconfont icon-jiaoyiguanbi"></icon>
+      <text>交易关闭</text>
+    </view>
+    <view class="address">
+      <icon class="iconfont icon-dizhi1"></icon>
+      <view class="flex1">
+        <view class="top">
+          <text class="contacts">{{consignee}}</text>
+          <text class="tel">{{consigneeMobile}}</text>
+        </view>
+        <view class="addr">{{shippingAddress}}</view>
+      </view>
+    </view>
+    <view class="sec-cut"></view>
+    <view class="order-container">
+      <view class="seller-name">买家：{{detail.buyerMemberName}}</view>
+      <view class='goods-list' >
+        <view class='goods-li' wx:for="{{orderItemList}}" wx:for-item="value" wx:key="{{index}}">
+          <view class='goods-dl'>
+            <view class='goods-dt'>
+              <image src="{{value.productImgUrl}}" @error="binderrorimg" data-index="{{index}}"></image>
+            </view>
+            <view class='goods-dd'>
+              <text class='desc'>{{value.originName}}{{value.gradeName}}{{value.varietyName}}{{value.specification}}</text>
+              <view class='size'>
+                <text>规格：{{value.specification}}</text>
+                <icon
+                @tap.stop="revise({{pkid}},{{value.salesPrice}},{{value.quantity}},{{value.unitText}},{{value.productStockNum}},{{value.pkid}})"
+                wx:if="{{detail.status==1}}"
+                class="iconfont icon-bianji"></icon>
+              </view>
+              <view class='li-bottom'>
+                <text class='price'>￥{{value.salesPrice}}</text>
+                <view class='vol'>x{{value.quantity}} {{value.unitText}}</view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="leave-msg">
+        <text>订单备注：</text>
+        <view class="msg" wx:if="{{detail.buyerComments != null}}">{{detail.buyerComments}}</view>
+      </view>
+      <view class="total">
+        <text>订单金额</text>
+        <view class="price">￥{{detail.goodsAmount}}</view>
+      </view>
+      <view class="hot-tel" @tap="makePhoneCall();">
+        <icon class="iconfont icon-lianxi-copy"></icon>
+        <text>联系客服</text>
+      </view>
+    </view>
+    <view class="sec-cut"></view>
+    <view class="order-info-list">
+      <view class="info-li">
+        <text>订单编号：</text>
+        <text>{{detail.orderNo}}</text>
+      </view>
+      <view class="info-li">
+        <text>订单金额：</text>
+        <text>￥{{detail.goodsAmount}}</text>
+      </view>
+      <view class="info-li">
+        <text>合计数量：</text>
+        <text>{{totalQuantity}}</text>
+      </view>
+      <view class="info-li">
+        <text>配送方式：</text>
+        <text>{{detail.deliveryTypeText}}</text>
+      </view>
+      <view class="info-li">
+        <text>支付方式：</text>
+        <text>{{detail.paymentTypeText}}</text>
+      </view>
+      <view class="info-li">
+        <text>已付金额：</text>
+        <text>￥{{detail.amountPaid}}</text>
+      </view>
+      <view class="info-li">
+        <text>信用金额：</text>
+        <text>￥{{detail.creditPaid}}</text>
+      </view>
+      <view class="info-li">
+        <text>待付金额：</text>
+        <text>￥{{detail.goodsAmount-detail.amountPaid}}</text>
+      </view>
+      <view class="info-li">
+        <text>下单时间：</text>
+        <text>{{detail.orderTime}}</text>
+      </view>
+      <view class="info-li">
+        <text>付款时间：</text>
+        <text wx:if="{{payTime != null}}">{{payTime}}</text>
+      </view>
+      <view class="info-li">
+        <text>发货时间：</text>
+        <text wx:if="{{deliveryTime != null}}">{{deliveryTime}}</text>
+      </view>
+    </view>
+    <view class="sec-cut"></view>
+    <view class="btn-group" wx:if="{{detail.status==1 || detail.status==2 || detail.status==3}}">
+      <view class="btn-gray" wx:if="{{detail.status==1}}" @tap="removeOrder()">取消订单</view>
+      <view class="btn-gray" wx:if="{{detail.status==2}}" @tap="makePhoneCall();">联系客服</view>
+      <view class="btn-red" wx:if="{{detail.status==3}}" @tap="deliver({{pkid}})">确认发货</view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import order_api from "../../../api/order_module"
+  import { TOKEN } from "../../../utils/Constant"
+  import Tips from "../../../utils/Tips"
+
+  export default class SellerOrderDetail extends wepy.page {
+    config = {
+      navigationBarTitleText: '订单详情'
+    }
+
+    data = {
+      pkid:0,
+      token:'',
+      detail:{
+        orderStatus:null
+      },
+      orderItemList:[],
+      totalQuantity:null,
+      price: null,	//订单价格
+      quantity: null,	//采购数量
+      orderId:null,   //修改选中订单号
+      orderItemId:null,
+      consignee:null,
+      consigneeMobile:null,
+      shippingAddress:null,
+      payTime:null,
+      deliveryTime:null
+    }
+
+    onLoad({pkid}) {
+      this.pkid = Number(pkid);
+    }
+
+    onShow() {
+      this.token=wepy.getStorageSync(TOKEN);
+      this.load();
+    }
+
+    async load() {
+      let r = await order_api.sellerdetail({
+        pkid:this.pkid,
+        token:this.token
+      })
+      if(r.result.order.detail.deliveryType == 2) {
+        this.consignee=`收货人：${r.result.order.detail.consignee}`;
+        this.consigneeMobile=r.result.order.detail.consigneeMobile;
+        this.shippingAddress=`收货地址：${r.result.order.detail.shippingAddress}`;
+      }else {
+        // this.consignee=`客服电话：${this.getGlobalInfo.serviceTel}`;
+        // this.consigneeMobile=null;
+        this.consignee=`卖家联系人：${r.result.order.detail.sellerCompanyName}`;
+        this.consigneeMobile=`${r.result.order.detail.sellerMemberMobile}`;
+        this.shippingAddress=`提货地址：${r.result.order.detail.shippingAddress}`;
+      }
+      this.payTime=r.result.payTime;
+      this.deliveryTime=r.result.deliveryTime;
+      this.totalQuantity=r.result.totalQuantity+r.result.unitText;
+      this.detail=r.result.order.detail;
+      this.orderItemList=r.result.order.orderItemList;
+      this.$apply();
+    }
+
+    methods = {
+      makePhoneCall() {
+        wepy.$instance.globalData.makePhoneCall();
+      },
+      //修改订单
+      revise(orderId,salesPrice,quantity,unitText,productStockNum,pkid){
+        this.$navigate(`./reviseOrder?orderId=${orderId}&salesPrice=${salesPrice}&quantity=${quantity}&unitText=${unitText}&productStockNum=${productStockNum}&pkid=${pkid}`);
+      },
+      //确认发货
+      deliver(pkid){
+        this.$navigate(`./deliverGoods?pkid=${pkid}`)
+      },
+      //取消订单
+      async removeOrder(){
+        Tips.confirm('是否取消订单').then(async ()=>{
+          let r = await order_api.cancel({
+            token:this.token,
+            pkid:this.pkid,
+            memberType:2
+          })
+          if(r) {
+            Tips.success('取消成功！');
+            this.load();
+          }
+        }).catch(()=>{
+
+        })
+      },
+      binderrorimg:(e)=>{
+        let index= e.target.dataset.index;
+        this.orderItemList[index].productImgUrl="../../../images/nopic.jpg";
+      }
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/components/order-detail";
+</style>

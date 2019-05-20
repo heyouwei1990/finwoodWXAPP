@@ -1,0 +1,19 @@
+<template>
+  <view>
+
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class ShareholdersInfo extends wepy.page {
+    config = {
+      navigationBarTitleText: '股东信息'
+    }
+  }
+</script>
+
+<style lang="scss">
+
+</style>

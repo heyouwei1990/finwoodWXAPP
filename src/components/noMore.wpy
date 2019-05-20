@@ -1,0 +1,31 @@
+<template>
+    <view class="empty-placeholder row-center" wx:if="{{show}}">
+        <view class="txt">{{message}}</view>
+    </view>
+</template>
+<script>
+import wepy from "wepy";
+export default class Placeholder extends wepy.component {
+  props = {
+    show: {
+      type: Boolean,
+      default: false
+    },
+    message: {
+      default: "没有更多数据了"
+    }
+  };
+}
+</script>
+<style lang="scss">
+.empty-placeholder {
+  margin-bottom: 30rpx;
+  width: 100%;
+  text-align: center;
+  .txt {
+    font-size: 26rpx;
+    color: #888888;
+    margin-top: 36rpx;
+  }
+}
+</style>

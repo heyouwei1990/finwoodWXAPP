@@ -1,0 +1,263 @@
+<template>
+  <view class="volumeCalc-page">
+    <view class="result">
+      <view class="li">
+        <span>累计数量：</span>
+        <span><b>800</b>根</span>
+      </view>
+      <view class="li">
+        <span>累计材积：</span>
+        <span><b>100.00</b>立</span>
+      </view>
+      <view class="li">
+        <span>累计总价：</span>
+        <span><b>800.00</b>元</span>
+      </view>
+    </view>
+    <view class="info clearfix">
+      <span>原木L:2-10m,D:14-220cm;</span>
+      <span>小径原木L:2-10m,D:4-13cm</span>
+      <span>短原木L:0.5-1.9m,D:8-100cm;</span>
+      <span>长原木L:10.1-30m,D:4-250cm</span>
+    </view>
+    <view class="list_item">
+      <view class="title">长度：</view>
+      <view class="input">
+        <input type="digit" maxlength="5" @blur="input" id="length" placeholder="请输入长度0.5-30m" value="{{input.length}}" />
+      </view>
+      <view>
+        米
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">直径：</view>
+      <view class="input">
+        <input type="number" maxlength="3" @blur="input" id="diameter" placeholder="请输入检尺径4-250cm" value="{{input.diameter}}" />
+      </view>
+      <view>
+        厘米
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">数量：</view>
+      <view class="input">
+        <input type="number" maxlength="8" @blur="input" id="quantity" placeholder="请输入数量" value="{{input.quantity}}" />
+      </view>
+      <view>
+        根
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">单价：</view>
+      <view class="input">
+        <input type="number" maxlength="8" @blur="input" id="price" placeholder="请输入单价" value="{{input.price}}" />
+      </view>
+      <view>
+        元/立
+      </view>
+    </view>
+    <view class="table" wx:if="{{list.length>0}}">
+      <view class="li">
+        <span>序号</span>
+        <span>长度(m)</span>
+        <span>直径(cm)</span>
+        <span>数量(根)</span>
+        <span>材积(立)</span>
+        <span>总价(元)</span>
+      </view>
+      <view class="li" wx:for="{{list}}" wx:key="{{index}}">
+        <span>1</span>
+        <span>10</span>
+        <span>10</span>
+        <span>40</span>
+        <span>6.800</span>
+        <span>680.00</span>
+      </view>
+    </view>
+    <view style="height:160rpx;"></view>
+    <view class="bottomBtn">
+      <view class="left button" @tap="clear();">清空</view>
+      <view class="right button" @tap="add();">累加计算</view>
+    </view>
+    <toast />
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+import validate from '../../utils/Validate'
+import Toast from '../../components/toast'
+import input from '../../mixins/input'
+
+export default class volume extends wepy.page {
+  config = {
+    navigationBarTitleText: '材积计算',
+  };
+  mixins = [input];
+  components = {
+    toast: Toast
+  };
+  data = {
+    list:['','','','','',''],    //累加计算
+    input:{
+      length:'',
+      diameter:'',
+      quantity:'',
+      price:''
+    }
+  };
+  methods = {
+    remove(pkid) {
+      setTimeout(()=>{
+        MessageBox.confirm('确定删除该条记录?').then(action => {
+          this.list.splice(pkid,1);
+        }).catch(action=>{});
+      },50)
+    },
+    add() {
+      if (!this.validate()) {
+        return;
+      }
+    },
+    clear() {
+      this.list = [];
+    }
+  }
+
+  validate() {
+    let rules = [
+      {
+        value: this.input.length,
+        method: 'optional',
+        message: '请输入长度'
+      },
+      {
+        value: this.input.length,
+        method: 'range',
+        param: [0.5,30],
+        message: '长度为0.5-30m'
+      },
+      {
+        value: this.input.diameter,
+        method: 'optional',
+        message: '请输入直径'
+      },
+      {
+        value: this.input.diameter,
+        method: 'range',
+        param: [4,250],
+        message: '检尺径4-250cm'
+      },
+      {
+        value: this.input.quantity,
+        method: 'optional',
+        message: '请输入数量'
+      },
+      {
+        value: this.input.price,
+        method: 'optional',
+        message: '请输入单价'
+      },
+    ];
+    return this.check(rules);
+  }
+}
+</script>
+
+<style lang="scss">
+@import "../../styles/mixin";
+@import "../../styles/components/list-item";
+  .volumeCalc-page {
+    .result  {
+      background: #fff;
+      margin: 15px;
+      box-shadow: 5px 5px 5px #eee;
+      .li {
+        @include fj;
+        border-bottom: 1px solid $light;
+        padding: 0 10px;
+        align-items: center;
+        height: 92rpx;
+        font-size: 34rpx;
+        b {
+          color: $primary;
+          font-size: 42rpx;
+          padding-right:5px;
+        }
+      }
+    }
+    .info {
+      padding: 0 20px;
+      margin-bottom: 15px;
+      span {
+        display: inline-block;
+        width: 50%;
+        float: left;
+        color: #ff0000;
+        font-size: 20rpx;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+    }
+    .table {
+      width: 100%;
+      background: #fff;
+      margin-top: 15px;
+      font-size: 20rpx;
+      .mint-cell-title {
+        display: none;
+      }
+      .mint-cell {
+        min-height: 60rpx;
+      }
+      .mint-cell-swipe-button  {
+        line-height: 60rpx;
+      }
+      .mint-cell-wrapper {
+        padding: 0;
+      }
+      .li {
+        width: 100vw;
+        @include fj(space-around);
+        line-height: 60rpx;
+        span {
+          font-size: 20rpx;
+          color: #333;
+          display: inline-block;
+          width: calc(64% / 3);
+          white-space: nowrap;
+          text-align: center;
+          &:nth-of-type(1),&:nth-of-type(2),&:nth-of-type(3) {
+            width: 12%;
+          }
+        }
+      }
+    }
+    .bottomBtn {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      box-sizing: border-box;
+      background: #f5f5f5;
+      padding: 30rpx;
+      .button {
+        font-size: 32rpx;
+        line-height: 95rpx;
+        text-align: center;
+        color: #fff;
+        border: none;
+        &:nth-of-type(1) {
+          background: #cccccc;
+          width: 35%
+        }
+        &:nth-of-type(2) {
+          background: $primary;
+          width: 60%
+        }
+      }
+    }
+  }
+</style>
+
+

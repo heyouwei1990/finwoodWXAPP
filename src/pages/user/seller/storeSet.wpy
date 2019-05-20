@@ -1,0 +1,47 @@
+<template>
+  <view class="storeSet-page">
+    <view class="list_item">
+      <view class="title"><i>*</i>店铺名称:</view>
+      <view class="input">
+        <input type="text" placeholder="请输入店铺名称" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title align-top"><i>*</i>店铺简介:</view>
+      <view class="input">
+        <textarea maxlength="200" placeholder="请输入200字以内公司简介"></textarea>
+      </view>
+    </view>
+    <view class="upload">
+      <view class="title"><i>*</i>店铺头部广告</view>
+      <view class="img">
+        <image src="../../../images/upload/uploadImg.png"></image>
+      </view>
+    </view>
+    <view class="upload">
+      <view class="title"><i>*</i>店铺广告</view>
+      <view class="img">
+        <image src="../../../images/upload/uploadImg.png"></image>
+      </view>
+    </view>
+    <button class="greenBtn">提交</button>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class StoreSet extends wepy.page {
+    config = {
+      navigationBarTitleText: '店铺设置'
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/mixin";
+  @import "../../../styles/components/list-item";
+  .upload{
+    border-bottom:1rpx solid $light;
+  }
+</style>

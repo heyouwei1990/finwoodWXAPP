@@ -1,0 +1,106 @@
+@import "../mixin";
+@import "goods-list";
+.tab-hd{
+  @include fj;
+  position: fixed;
+  left:0;
+  top:0;
+  width: 100%;
+  height:80rpx;
+  padding-left:30rpx;
+  padding-right:30rpx;
+  border-bottom:1rpx solid $light;
+  background-color: #fff;
+}
+.tab-hd-item{
+  height:80rpx;
+  line-height:80rpx;
+  border-bottom:1px solid transparent;
+  font-size:$text-xl;
+  color: $dark;
+}
+.tab-hd-item.active{
+  color: $primary;
+  border-bottom-color: $primary;
+}
+.order-list{
+  padding-top:80rpx;
+  width: 100%;
+  overflow: hidden;
+}
+.order-li{
+  margin-bottom:20rpx;
+  background-color: #fff;
+  .top{
+    @include fj;
+    align-items: center;
+    padding:14rpx 30rpx;
+    line-height:44rpx;
+    border-bottom:1rpx solid $light;
+    font-size:$text-nm;
+  }
+  .seller-name{
+    flex: 1;
+    white-space:nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size:$text-nm;
+    line-height:44rpx;
+    color: $dark;
+  }
+  .orderNo{
+    font-size:$text-nm;
+    color: $dark;
+  }
+  .time{
+    font-size:$text-xs;
+    color: #999;
+  }
+  .flex1{
+    flex: 1;
+  }
+  .status{
+    color: $primary;
+  }
+  .goods-li:last-child .goods-dl{
+    border-bottom:1rpx solid $light;
+  }
+  .total{
+    margin-left:30rpx;
+    margin-right:30rpx;
+    color: $dark;
+    line-height:72rpx;
+    height:72rpx;
+    border-bottom:1rpx solid $light;
+    font-size:$text-nm;
+    text-align: right;
+  }
+  .bottom{
+    display: flex;
+    padding-left:30rpx;
+    padding-right:30rpx;
+    height:84rpx;
+    align-items: center;
+  }
+  .btn-gray,.btn-red{
+    width: 160rpx;
+    height:50rpx;
+    background-color: #fff;
+    font-size:$text-nm;
+    border-radius: 25rpx;
+    line-height:48rpx;
+    margin-left:44rpx;
+    text-align: center;
+  }
+  .btn-gray{
+    color: #666;
+    border: 1rpx solid #ccc;
+  }
+  .btn-red{
+    color: $danger;
+    border: 1rpx solid $danger;
+  }
+}
+.empty-placeholder .txt{
+  margin-top:20rpx;
+}

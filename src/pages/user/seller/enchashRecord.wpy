@@ -1,0 +1,20 @@
+<template>
+  <view class="">
+
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class EnchashRecord extends wepy.page {
+    config = {
+      navigationBarTitleText: ''
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/mixin";
+
+</style>

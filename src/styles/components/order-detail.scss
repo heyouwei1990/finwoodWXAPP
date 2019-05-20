@@ -1,0 +1,165 @@
+@import "../mixin";
+@import "goods-list";
+.header{
+  background-color: $primary;
+  height:118rpx;
+  line-height:118rpx;
+  text-align: center;
+  color: #fff;
+  font-size:$text-xl;
+  .iconfont{
+    font-size:68rpx;
+    vertical-align: middle;
+    margin-right:24rpx;
+  }
+  text{
+    vertical-align: middle;
+  }
+}
+.address{
+  background-color: #fff;
+  height:132rpx;
+  display: flex;
+  align-items: center;
+  padding:15rpx 30rpx;
+  .icon-dizhi1{
+    font-size:44rpx;
+    color: #666;
+  }
+  .flex1{
+    flex: 1;
+    overflow: hidden;
+    margin-left:20rpx;
+    margin-right:30rpx;
+    .top{
+      overflow: hidden;
+      line-height:44rpx;
+      color: $dark;
+      display: flex;
+      justify-content: space-between;
+    }
+    .contacts{
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size:$text-xl;
+    }
+    .tel{
+      font-size:$text-nm;
+      margin-left:30rpx;
+    }
+    .addr{
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size:$text-nm;
+      line-height:44rpx;
+      color: #666;
+    }
+  }
+  .icon-jiantouyou{
+    font-size:36rpx;
+    color: #999;
+  }
+}
+.goods-li:last-child .goods-dl{
+  border-bottom:1rpx solid $light;
+}
+.order-container{
+  background-color: #fff;
+  .seller-name{
+    padding:16rpx 30rpx;
+    line-height:40rpx;
+    font-size:$text-nm;
+    color: $dark;
+    border-bottom:1rpx solid $light;
+  }
+  .leave-msg{
+    display: flex;
+    padding:16rpx 0rpx;
+    margin-left:30rpx;
+    margin-right:30rpx;
+    font-size: $text-nm;
+    line-height:40rpx;
+    border-bottom:1rpx solid $light;
+    text{
+      color: $dark;
+    }
+    .msg{
+      color: #999;
+      flex: 1;
+    }
+  }
+  .total{
+    @include fj;
+    margin-left:30rpx;
+    margin-right:30rpx;
+    font-size: $text-nm;
+    line-height:72rpx;
+    height:72rpx;
+    border-bottom:1rpx solid $light;
+    text{
+      color: $dark;
+    }
+    .price{
+      color: $danger;
+    }
+  }
+  .hot-tel{
+    padding-left:30rpx;
+    padding-right:30rpx;
+    line-height:72rpx;
+    height:72rpx;
+    font-size:$text-nm;
+    color: $dark;
+    .icon-lianxi-copy{
+      font-size:40rpx;
+      margin-right:12rpx;
+      vertical-align: middle;
+      color: $primary;
+    }
+    text{
+      vertical-align: middle;
+    }
+  }
+}
+.order-info-list{
+  background-color: #fff;
+  padding:20rpx 30rpx;
+  .info-li{
+    display: flex;
+    font-size:$text-nm;
+    color: #999;
+    height:40rpx;
+    line-height:40rpx;
+  }
+}
+.btn-group{
+  width: 100%;
+  //height:90rpx;
+  background-color: #fff;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding:30rpx 30rpx 60rpx;
+  border-top:1rpx solid $light;
+  .btn-gray,.btn-red{
+    width: 160rpx;
+    height:50rpx;
+    background-color: #fff;
+    font-size:$text-nm;
+    border-radius: 25rpx;
+    line-height:48rpx;
+    margin-left:44rpx;
+    text-align: center;
+  }
+  .btn-gray{
+    color: #666;
+    border: 1rpx solid #ccc;
+  }
+  .btn-red{
+    color: $danger;
+    border: 1rpx solid $danger;
+  }
+}

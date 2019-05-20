@@ -1,0 +1,38 @@
+@import "../mixin";
+.hotbuy-li{
+  padding-left:30rpx;
+  padding-right:30rpx;
+  background-color: #fff;
+}
+.hotbuy-item{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  border-bottom:1rpx solid $light;
+}
+.hotbuy-li:last-child .hotbuy-item{
+  border-bottom:0;
+}
+.hotbuy-left{
+  width: 50%;
+  flex: 1;
+  font-size: $text-nm;
+  color: #666;
+  line-height: 42rpx;
+}
+.hotbuy-left .goods-name{
+  color: $dark;
+  margin-bottom: 10rpx;
+}
+.hotbuy-right{
+  text-align: right;
+  line-height: 42rpx;
+  font-size:$text-xl;
+  .status{
+    color: $danger;
+  }
+  .price{
+    color: $danger;
+  }
+}

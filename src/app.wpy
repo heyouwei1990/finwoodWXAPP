@@ -1,0 +1,186 @@
+<script>
+import wepy from 'wepy'
+import 'wepy-async-function'
+import {
+  USER_SPECICAL_INFO,
+  USER_INFO,
+  SYSTEM_INFO,
+  GLOBAL_INFO,
+  TOKEN
+} from "./utils/Constant";
+import commom_api from "./api/common_module"
+import member_api from "./api/member_module"
+import Tips from './utils/Tips'
+
+export default class extends wepy.app {
+  config = {
+    pages: [
+      'pages/home/index',
+      'pages/user/userInfo',
+      'pages/user/index',
+      'pages/user/success',
+      'pages/user/account/corporateAccount',
+      'pages/user/account/corporationInfo',
+      'pages/user/account/accountInfo',
+      'pages/user/account/shareholdersInfo',
+      'pages/user/account/personalAccount',
+      'pages/user/account/openAccount',
+      'pages/store/cart',
+      'pages/user/seller/watchRefund',
+      'pages/user/seller/storeSet',
+      'pages/user/seller/deliverGoods',
+      'pages/user/seller/goodsManage',
+      'pages/user/seller/goodsDetail',
+      'pages/user/seller/reviseOrder',
+      'pages/user/seller/sellerOrder',
+      'pages/user/seller/sellerOrderDetail',
+      'pages/user/seller/accountEdit',
+      'pages/user/seller/accountManage',
+      'pages/user/buyer/collect',
+      'pages/user/buyer/buyerOrder',
+      'pages/user/buyer/buyerOrderDetail',
+      'pages/user/buyer/addAddress',
+      'pages/user/buyer/address',
+      'pages/user/receivingAccount',
+      'pages/user/companyApply',
+      'pages/user/personApply',
+      'pages/home/market',
+      'pages/home/finance',
+      'pages/home/applyLoan',
+      'pages/home/volume',
+      'pages/home/volumeCalc',
+      'pages/store/index',
+      'pages/store/detail',
+      'pages/store/search',
+      'pages/store/pay',
+      'pages/store/order',
+      'pages/store/voucher',
+      'pages/store/paySuccess',
+      'pages/hotbuy/index',
+      'pages/hotbuy/supply',
+      'pages/hotbuy/supplyDetail',
+      'pages/hotbuy/requirement',
+      'pages/hotbuy/requireDetail',
+      'pages/publish/index',
+      'pages/publish/issueSuccess',
+      'pages/login/login',
+      'pages/login/register'
+    ],
+    window: {
+      backgroundTextStyle: 'dark',
+      navigationBarBackgroundColor: '#13ae2f',
+      navigationBarTitleText: 'WeChat',
+      navigationBarTextStyle: 'white',
+      backgroundColor: '#F5F5F5'
+    },
+    tabBar: {
+	    list: [
+	      {
+	        pagePath: "pages/home/index",
+	        text: "首页",
+	        iconPath: "images/tab/home.png",
+	        selectedIconPath: "images/tab/home-active.png"
+	      },
+	      {
+	        pagePath: "pages/store/index",
+	        text: "商城",
+	        iconPath: "images/tab/store.png",
+	        selectedIconPath: "images/tab/store-active.png"
+	      },
+	      {
+	        pagePath: "pages/hotbuy/index",
+	        text: "求购",
+	        iconPath: "images/tab/buy.png",
+	        selectedIconPath: "images/tab/buy-active.png"
+	      },
+	      // {
+	      //   pagePath: "pages/publish/index",
+	      //   text: "发布",
+	      //   iconPath: "images/tab/publish.png",
+	      //   selectedIconPath: "images/tab/publish-active.png"
+	      // },
+	      {
+	        pagePath: "pages/user/index",
+	        text: "我的",
+	        iconPath: "images/tab/user.png",
+	        selectedIconPath: "images/tab/user-active.png"
+	      }
+	    ],
+	    color: "#333",
+	    selectedColor: "#3bc03b",
+	    backgroundColor: "#fff"
+	  }
+  }
+
+  globalData = {
+    //拨打客服电话
+    makePhoneCall() {
+      wx.makePhoneCall({
+        phoneNumber: wepy.getStorageSync(GLOBAL_INFO).serviceTel
+      })
+    }
+  }
+
+  constructor () {
+    super();
+    this.use('requestfix');
+    this.use('promisify');
+  }
+
+  async onLaunch() {
+    let self = this;
+    if (wepy.getStorageSync(TOKEN)==="") {
+      let res = await wepy.login();
+      if (res.code) {
+        //用户code 换取 session_key
+        let r = await member_api.miniprogramasessionid({
+          code:res.code
+        });
+        wepy.setStorageSync(USER_SPECICAL_INFO, r.result.sessionId);
+        //获取userInfo 
+        (function getUserInfo() {
+          wx.getUserInfo({
+            withCredentials:true,
+            success: async(e)=> {
+              let r = await member_api.miniprogramauserinfo({
+                encrypteData:e.encryptedData,
+                iv:e.iv,
+                sessionId:wepy.getStorageSync(USER_SPECICAL_INFO)
+              });
+              if(r) {
+                wepy.setStorageSync(USER_INFO, r.result.userinfo);
+                wepy.setStorageSync(TOKEN,r.result.token);
+              }
+            },
+            fail:()=> {
+              Tips.modal('拒绝授权将无法体验小程序功能!').then(()=>{
+                wx.openSetting({
+                  complete:()=> {
+                    getUserInfo();
+                  }
+                })
+              })
+            }
+          });
+        })();
+
+
+        //存储系统信息 
+        // let systemInfo = wepy.getSystemInfoSync();
+        // wepy.setStorageSync(SYSTEM_INFO, systemInfo);
+
+      }
+    }
+
+    //全局基础信息
+    let globalinfo = await commom_api.globalinfo();
+    if(!globalinfo)return;
+    wepy.setStorageSync(GLOBAL_INFO, globalinfo.result);
+  }
+}
+</script>
+
+<style lang="scss">
+  @import "./styles/base";
+  @import "./styles/icon";
+</style>

@@ -1,0 +1,146 @@
+@import "../mixin";
+//商品列表
+.goods-list{
+  padding-top:8rpx;
+  padding-bottom:8rpx;
+  background-color: #fff;
+  .goods-li{
+    padding: 0rpx 30rpx;
+  }
+  .goods-li:last-child .goods-dl{
+    border-bottom: 0;
+  }
+}
+.goods-dl{
+  display: flex;
+  align-items: center;
+  padding: 8rpx 0rpx;
+  border-bottom: 1rpx solid #eee;
+  .goods-dt{
+    width: 206rpx;
+    height: 206rpx;
+    overflow: hidden;
+    margin-right: 24rpx;
+    position: relative;
+  }
+  .goods-dt image{
+    display: block;
+    width: 206rpx;
+    height: 206rpx;
+  }
+  .goods-dd{
+    width: 460rpx;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .goods-dd .desc{
+    flex: 1;
+    height: 84rpx;
+    font-size: $text-nm;
+    line-height: 42rpx;
+    color: $dark;
+    overflow: hidden;
+    word-break: break-all;
+    word-wrap: break-word;
+  }
+  .seller{
+    font-size: $text-nm;
+    height: 48rpx;
+    //line-height: 48rpx;
+    color: #666;
+    margin-top: 10rpx;
+    width: 100%;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    text {
+      display: inline-block;
+      max-width: 90%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+  .seller .iconfont{
+    font-size: $text-nm;
+    line-height: 48rpx;
+    color: #f69e29;
+    position: relative;
+    top: -1px;
+    left: 3px;
+  }
+  .size{
+    @include fj;
+    align-items: center;
+    font-size: $text-xs;
+    height: 48rpx;
+    line-height: 48rpx;
+    color: #999;
+    margin-top: 10rpx;
+  }
+  .icon-bianji{
+    font-size:44rpx;
+    color: #666;
+    margin-left:10rpx;
+  }
+  .li-bottom{
+    height: 48rpx;
+    line-height: 48rpx;
+    flex: 1;
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-content: center;
+    margin-top: 8rpx;
+  }
+  .price{
+    font-size: $text-nm;
+    color: #d11919;
+  }
+  .time,.vol{
+    font-size: $text-xs;
+    color: #999;
+  }
+}
+
+
+//求购列表
+.hotbuy-li{
+  padding-left:30rpx;
+  padding-right:30rpx;
+  background-color: #fff;
+  .hotbuy-item{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20rpx 0;
+    border-bottom:1rpx solid $light;
+  }
+  .hotbuy-li:last-child .hotbuy-item{
+    border-bottom:0;
+  }
+  .hotbuy-left{
+    width: 50%;
+    flex: 1;
+    font-size: $text-nm;
+    color: #666;
+    line-height: 42rpx;
+  }
+  .hotbuy-left .goods-name{
+    color: $dark;
+    margin-bottom: 10rpx;
+  }
+  .hotbuy-right{
+    text-align: right;
+    line-height: 42rpx;
+    font-size:$text-xl;
+    .status{
+      color: $danger;
+    }
+    .price{
+      color: $danger;
+    }
+  }
+}
+

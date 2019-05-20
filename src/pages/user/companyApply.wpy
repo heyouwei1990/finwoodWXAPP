@@ -1,0 +1,228 @@
+<template>
+  <view>
+    <view class="list_item">
+      <view class="title">公司名称</view>
+      <view class="input">
+        <input type="text" wx:if="{{!edit}}" disabled placeholder="请输入公司名称" value="{{companyName}}" />
+        <input type="text" wx:if="{{edit}}" placeholder="请输入公司名称" value="{{companyName}}" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title"><i>*</i>公司名简称</view>
+      <view class="input">
+        <input type="text"  placeholder="请输入公司名简称" @input="input" id="abbrName" value="{{input.abbrName}}" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title"><i>*</i>联系姓名</view>
+      <view class="input">
+        <input type="text" placeholder="请输入授权人姓名" @input="input" id="name" value="{{input.name}}" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title"><i>*</i>联系电话</view>
+      <view class="input">
+        <input type="text" placeholder="请输入联系方式" @input="input" id="phone" value="{{input.phone}}" />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">三证合一</view>
+      <view class="input">
+        <radio-group class="radio-group" @change="radioChange">
+          <label class="radio" wx:for="{{radios}}"  wx:key="{{index}}">
+            <radio value="{{item.name}}" checked="{{item.checked}}"/>{{item.value}}
+          </label>
+        </radio-group>
+      </view>
+    </view>
+    <!--<view class="list_item">
+      <view class="title"><i wx:if="{{companyAuthType==2}}">*</i>{{text.value}}</view>
+      <view class="input">
+        <input type="text" placeholder="{{text.placeholder}}" @input="input" id="code" value="{{input.code}}" />
+      </view>
+    </view>-->
+    <view class="sec-cut"></view>
+    <view class="upload">
+      <view class="title"><i>*</i>营业执照正面照片</view>
+      <view class="img">
+        <image @tap="chooseImage(0);" @error="binderrorimg" src="{{preview[0]}}"></image>
+      </view>
+    </view>
+    <button class="greenBtn" @tap="submit();">提交审核</button>
+    <toast />
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import { TOKEN, GLOBAL_INFO } from "../../utils/Constant"
+  import validate from '../../utils/Validate'
+  import input from '../../mixins/input'
+  import upload from '../../utils/Upload'
+  import member_api from '../../api/member_module'
+  import Toast from '../../components/toast'
+
+  export default class CompanyApply extends wepy.page {
+    config = {
+      navigationBarTitleText: '公司认证'
+    };
+    components = {
+      toast: Toast
+    };
+    mixins=[input];
+
+    data = {
+      radios:[
+        {name: '0', value: '是',checked:'true'},
+        {name: '1', value: '否',},
+      ],
+      companyName:null,
+      preview:['../../images/upload/business.png'],
+      uploadUrl: [''],    //上传所需图片地址,变量名固定
+      companyAuthType:2,   //是否三证合一，2为是，1为否
+      input: {
+        abbrName:'',
+        name:'',
+        phone:'',
+        code:''
+      },
+      token:'',
+      ajax:false,
+      edit:false
+    }
+
+    computed = {
+      text:function() {
+        if(this.companyAuthType == 2) {
+          return {
+            value:'社会信用代码',
+            placeholder:'请输入社会信用代码'
+          }
+        }else {
+          return {
+            value:'营业执照代码',
+            placeholder:'请输入营业执照代码'
+          }
+        }
+      }
+    }
+
+    onLoad({companyName,edit}) {
+      this.companyName=companyName;
+      if(edit) {
+        this.edit=true;
+      }
+    }
+
+    onShow() {
+      this.token=wepy.getStorageSync(TOKEN);
+      this.load();
+    }
+
+    async load() {
+      if(this.ajax) {
+        return;
+      }
+      let r = await member_api.companyauthen({
+        token:this.token
+      })
+      if(r.result != null) {
+        this.companyName=r.result.authResult.companyName;
+        this.input.abbrName=r.result.authResult.abbrName;
+        this.input.name=r.result.authResult.contact;
+        this.input.phone=r.result.authResult.telephone;
+        if(r.result.authResult.businessLicenseUrl != null && r.result.authResult.businessLicenseUrl != '') {
+          this.preview[0]=wepy.getStorageSync(GLOBAL_INFO).imgPrefixUrl+r.result.authResult.businessLicenseUrl;
+          this.uploadUrl[0]=r.result.authResult.businessLicenseUrl;
+        }
+        //this.input.code=r.result.authResult.businessLicenseCode;
+      }
+      this.ajax=true;
+      this.$apply();
+    }
+
+    methods = {
+      async submit() {
+        if(!this.validate()){
+          return;
+        }
+        let r =await member_api.companyapply({
+          token: this.token,
+          companyName:this.companyName,
+          abbrName:this.input.abbrName,
+          telephone:this.input.phone,
+          contact:this.input.name,
+          businessLicense:this.uploadUrl[0],
+          companyAuthType:this.companyAuthType,
+          //licenseCode:this.input.code
+        })
+        if(r) {
+          this.$navigate('./success?text=返回账户信息&page=2');
+        }
+      },
+      //调起相机相册
+      chooseImage(index) {
+        upload.minigramupload(this,index,{
+          type:1,
+          isThumb:0
+        });
+      },
+      //选择是否三证合一
+      radioChange(e){
+        if(e.detail.value==0){
+          this.companyAuthType=2;
+        }else{
+          this.companyAuthType=1;
+        }
+        this.input.code='';
+      },
+      binderrorimg(){
+        this.preview[0]="../../images/nopic.jpg";
+      }
+    }
+
+    validate(){
+      let rules=[
+        {
+          value: this.input.abbrName,
+          method: 'optional',
+          message: '请输入公司名简称'
+        },
+        {
+          value: this.input.name,
+          method: 'optional',
+          message: '请输入联系姓名'
+        },
+        {
+          value: this.input.phone,
+          method: 'optional',
+          message: '请输入联系方式'
+        },
+        {
+          value: this.input.phone,
+          method: 'phone',
+          message: '号码格式不正确'
+        },
+        /*{
+          value: this.input.code,
+          method: 'optional',
+          message: `请输入${this.text.value}`
+        },*/
+        {
+          value: this.uploadUrl[0],
+          method: 'optional',
+          message: '请上传营业执照正面'
+        }
+      ]
+      return this.check(rules)
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/list-item";
+  .list_item .title{
+    min-width:212rpx;
+  }
+</style>

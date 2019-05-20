@@ -1,0 +1,144 @@
+<template>
+  <view>
+    <view class="list_item">
+      <view class="title"><i>*</i>数量</view>
+      <view class="input">
+        <input type="number" maxlength="10" @input="input" value="{{input.amount}}" id="amount" placeholder="请输入求购数量"  />
+      </view>
+      <view class="unit-words">立方米</view>
+    </view>
+    <view class="list_item">
+      <view class="title"><i>*</i>单价</view>
+      <view class="input">
+        <input type="number" maxlength="10" @input="input" value="{{input.unitPrice}}" id="unitPrice" placeholder="请输入商品单价"  />
+      </view>
+      <view class="unit-words">元</view>
+    </view>
+    <view class="list_item">
+      <view class="title"><i>*</i>联系人</view>
+      <view class="input">
+        <input type="text" @input="input" value="{{input.contact}}" id="contact" placeholder="请输入您的真实姓名"  />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title"><i>*</i>联系电话</view>
+      <view class="input">
+        <input type="number" @input="input" value="{{input.phone}}" id="phone" placeholder="请输入您的联系方式"  />
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title align-top">其他要求</view>
+      <view class="input">
+        <textarea maxlength="200" @input="input" value="{{input.details}}" id="details" placeholder="请输入200字以内其他要求"  />
+      </view>
+    </view>
+    <button class="greenBtn" @tap="supply">确定</button>
+    <toast/>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import { TOKEN } from '../../utils/Constant'
+  import input from '../../mixins/input'
+  import validate from '../../utils/Validate'
+  import data_api from '../../api/data_module'
+  import member_api from '../../api/member_module'
+  import Toast from '../../components/toast'
+
+  export default class Supply extends wepy.page {
+    config = {
+      navigationBarTitleText: '我要供货'
+    };
+    components={
+      toast:Toast
+    };
+    mixins=[input];
+    data={
+      token:'',
+      pkid:0,
+      input:{
+        amount:'',
+        unitPrice:'',
+        contact:'',
+        phone:'',
+        details:''
+      }
+    }
+    onLoad({pkid}){
+      this.pkid=Number(pkid);
+    }
+    onShow(){
+      this.token=wepy.getStorageSync(TOKEN);
+      this.load();
+    }
+    async load(){
+      let r=await member_api.centerinfo({
+        token:this.token
+      })
+      this.input.contact=r.result.name;
+      this.input.phone=r.result.mobile;
+      this.$apply();
+    }
+    methods={
+      async supply(){
+        if(!this.validate()){
+          return;
+        }
+        let r=await data_api.supplyquotate({
+          token:this.token,
+          inquiryId:this.pkid,
+          salesPrice:Number(this.input.unitPrice),
+          quantity:Number(this.input.amount),
+          mobile:this.input.phone,
+          contact:this.input.contact,
+          details:this.input.details,
+        })
+        if(r){
+          this.$navigate(`../user/success?text=返回&page=1`);
+        }
+      }
+    };
+    validate(){
+      let rules=[
+        {
+          value:this.input.amount,
+          method:'optional',
+          message:'请输入求购数量'
+        },
+        {
+          value:this.input.amount,
+          method:'amount',
+          message:'数量需填入正整数'
+        },
+        {
+          value:this.input.unitPrice,
+          method:'optional',
+          message:'请输入商品单价'
+        },
+        {
+          value:this.input.contact,
+          method:'optional',
+          message:'请输入您的真实姓名'
+        },
+        {
+          value:this.input.phone,
+          method:'optional',
+          message:'请输入您的联系方式'
+        },
+        {
+          value:this.input.phone,
+          method:'call',
+          message:'联系方式格式不正确'
+        },
+      ];
+      return this.check(rules);
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  @import "../../styles/components/list-item";
+
+</style>

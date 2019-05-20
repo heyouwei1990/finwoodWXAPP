@@ -1,0 +1,74 @@
+<template>
+  <view class="watchRefund-page">
+    <view class="list_item">
+      <view class="title">退款原因:</view>
+      <view class="input">
+        <view class="val">不买了</view>
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title">退款金额:</view>
+      <view class="input">
+        <view class="val">￥3500</view>
+      </view>
+    </view>
+    <view class="list_item">
+      <view class="title align-top">退款说明:</view>
+      <view class="input">
+        <view class="text-val"></view>
+      </view>
+    </view>
+    <view class="fixed-bottom">
+      <view class="btn-refuse">拒绝退款</view>
+      <view class="btn-agree">同意退款</view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class watchRefund extends wepy.page {
+    config = {
+      navigationBarTitleText: '退款'
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../../styles/mixin";
+  @import "../../../styles/components/list-item";
+  .watchRefund-page{
+    padding-bottom:90rpx;
+  }
+  .fixed-bottom{
+    background-color: #fff;
+    position: fixed;
+    left:0;
+    bottom:0;
+    z-index:10;
+    width: 100%;
+    height:90rpx;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding:0 30rpx;
+  }
+  .btn-agree,.btn-refuse{
+    width: 260rpx;
+    height:60rpx;
+    line-height:58rpx;
+    border: 1rpx solid $primary;
+    font-size:$text-xl;
+    text-align: center;
+    border-radius: 60rpx;
+  }
+  .btn-refuse{
+    background-color: #fff;
+    color: $primary;
+  }
+  .btn-agree{
+    background-color: $primary;
+    color: #fff;
+  }
+</style>

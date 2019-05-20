@@ -1,0 +1,112 @@
+<template>
+  <!-- 材积计算器 -->
+  <view class="calc">
+    <view @tap="open();" class="mark" wx-if="{{isShow}}"></view>
+    <view class="menu">
+      <i @tap="open();" class="{{isShow?'iconfont icon-shanchu rotateR':'iconfont icon-shanchu rotateL'}}"></i>
+      <transition name="fade">
+        <ul class="{{isShow?'fade-enter':'fade-leave'}}">
+          <li wx:for="{{list}}" wx:key="{{index}}" @tap="goto({{item.link}})">
+              <span>{{item.title}}</span>
+              <i class="{{'iconfont '+item.icon}}"></i>
+          </li>
+        </ul>
+      </transition>
+    </view>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+export default class calc extends wepy.component {
+  data = {
+    isShow:false
+  };
+  props = ["list"];
+  methods = {
+    open() {
+      this.isShow = !this.isShow;
+    },
+    goto(link) {
+      this.isShow = !this.isShow;
+      wx.navigateTo({
+        url: link
+      })
+    }
+  }
+}
+</script>
+
+<style lang="scss">
+@import "../styles/mixin";
+  .calc {
+    .rotateR {
+      transform:rotate(0deg);
+      transition: all .5s;
+    }
+    .rotateL {
+      transform:rotate(-45deg);
+      transition: all .5s;
+    }
+    .fade-enter {
+      transition: opacity .5s;
+    }
+    .fade-leave {
+      opacity: 0;
+      transition: all .5s;
+    }
+    .mark {
+      width: 100%;
+      height: 100%;
+      position: fixed;
+      top: 0;
+      z-index: 99;
+      background: rgba(0,0,0,0.5);
+    }
+    .menu {
+      position: fixed;
+      bottom: 30px;
+      right:30px;
+      z-index: 9999;
+      >i {
+        display: inline-block;
+        width: 110rpx;
+        height: 110rpx;
+        line-height: 110rpx;
+        text-align: center;
+        color: #fff;
+        font-size: 60rpx;
+        background: $primary;
+        border-radius: 50%;
+      }
+      ul {
+        position: absolute;
+        width: 32vw;
+        right:16rpx;
+        bottom: 160rpx;
+        li {
+          @include fj;
+          align-items: center;
+          height: 130rpx;
+          span {
+            font-size: 30rpx;
+            color: #fff;
+            white-space: nowrap;
+          }
+          i {
+            display: inline-block;
+            width: 78rpx;
+            height: 78rpx;
+            line-height: 78rpx;
+            text-align: center;
+            color: #fff;
+            font-size: 36rpx;
+            background: #2dc4e4;
+            border-radius: 50%;
+          }
+        }
+      }
+    }
+  }
+</style>
+

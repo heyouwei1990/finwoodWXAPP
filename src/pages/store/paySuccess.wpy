@@ -1,0 +1,108 @@
+<template>
+    <view class="paySuccess-page">
+      <icon class="iconfont icon-chenggong"></icon>
+      <view class="result-msg">支付成功</view>
+      <view class="remark">我们将尽快为您联系商家确认发货</view>
+      <view class="info-wrap">
+        <view class="info-item">订单编号：{{orderNo}}</view>
+        <view class="info-item">支付方式：账户余额</view>
+        <view class="info-item">订单金额：{{goodsAmount}}元</view>
+      </view>
+      <navigator url="/pages/user/buyer/buyerOrderDetail?pkid={{pkid}}"
+      hover-class="none" class="greenBtn">查看订单详情</navigator>
+    </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import order_api from '../../api/order_module'
+  import { TOKEN } from '../../utils/Constant'
+
+  export default class HotBuy extends wepy.page {
+    config = {
+      navigationBarTitleText: '支付成功'
+    }
+
+    data = {
+      pkid : 0,
+      token:'',
+      orderNo:'',
+      goodsAmount:''
+    }
+
+    onLoad({pkid}) {
+      this.pkid = Number(pkid);
+    }
+
+    onShow() {
+      this.token=wepy.getStorageSync(TOKEN);
+      this.load();
+    }
+
+    onUnload() {
+      wx.navigateBack({
+        delta: 2
+      })
+    }
+
+    async load() {
+      let r = await order_api.buyerdetail({
+        token:this.token,
+        pkid:this.pkid
+      })
+      if(r) {
+        this.orderNo = r.result.order.detail.orderNo;
+        this.goodsAmount = r.result.order.detail.goodsAmount;
+        this.$apply();
+      }
+    }
+  }
+</script>
+
+<style lang="scss">
+  @import "../../styles/mixin";
+  .paySuccess-page{
+    background-color: #fff;
+    width: 100vw;
+    min-height: 100vh;
+    overflow: hidden;
+    text-align: center;
+    padding:30rpx;
+  }
+  .icon-chenggong{
+    display: block;
+    margin: 10rpx auto;
+    font-size:160rpx;
+    color: $primary;
+  }
+  .result-msg{
+    font-size:36rpx;
+    color: $dark;
+    line-height:2;
+  }
+  .remark{
+    font-size:$text-lg;
+    color: #666;
+    line-height:2;
+  }
+  .info-wrap{
+    display: inline-block;
+    text-align: left;
+    margin-top:30rpx;
+  }
+  .info-item{
+    font-size:$text-xs;
+    color: #999;
+    line-height:40rpx;
+  }
+  .greenBtn{
+    display: block;
+    margin-top:30rpx;
+    border-radius: 4px;
+    color: #fff;
+    background-color: $primary;
+    font-size:$text-lg;
+    height:90rpx;
+    line-height:90rpx;
+  }
+</style>

@@ -1,0 +1,60 @@
+<template>
+  <view class="volume-page">
+    <view class="item-group">
+      <navigator hover-class="none" url="./volumeCalc" class="item-list">
+        <view>
+          <view class="h2">原木</view>
+          <view class="span">原木L:2-10m,D:14-220cm;</view>
+          <view class="span">小径原木L:2-10m,D:4-13cm</view>
+          <view class="span">短原木L:0.5-1.9m,D:8-100cm;</view>
+          <view class="span">长原木L:10.1-30m,D:4-250cm</view>
+        </view>
+        <i class="iconfont icon-jiantouyou"></i>
+      </navigator>
+    </view>
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+export default class volume extends wepy.page {
+  config = {
+    navigationBarTitleText: '材积计算',
+  };
+}
+</script>
+
+<style lang="scss">
+@import "../../styles/mixin";
+  .volume-page {
+    .item-group {
+      margin-bottom:10px;
+    }
+    .item-list {
+      @include fj;
+      align-items: center;
+      padding: 10px 15px;
+      background: #fff;
+      i {
+        color: #999;
+        font-size: 20px;
+      }
+      .h2 {
+        font-size: 34rpx;
+        margin-bottom: 2px;
+      }
+      .span {
+        display: inline-block;
+        width: 50%;
+        float: left;
+        font-size: 20rpx;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        line-height: 1.5;
+      }
+    }
+  }
+</style>
+
+

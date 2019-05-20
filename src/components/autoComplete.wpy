@@ -1,0 +1,151 @@
+<template>
+  <view class="autoComplete-component">
+    <view class="list_item">
+      <view class="title"><i>*</i>{{title}}</view>
+      <view class="input">
+        <input type="text" @focus="focus" @blur="blur" @input="input" placeholder="{{placeholder}}" value="{{currentValue}}" />
+      </view>
+    </view>
+    <scroll-view scroll-y class="result" wx:if="{{matchList&&isShow}}" @scroll="scroll">
+      <view class="li" wx:for="{{matchList}}" wx:key="{{index}}" @tap.stop="select({{item}})">
+        {{item.text}}
+      </view>
+    </scroll-view>
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+export default class autoComplete extends wepy.component {
+  data = {
+    currentValue:'',
+    matchList:[],
+    isSelect:false,
+    oldval:"",
+    isScroll:false,
+    timer:null
+  };
+  props = {
+    custom:{
+      default: 0,
+    },
+    isShow:{
+      type: Boolean,
+      default: false,
+      twoWay: true
+    },
+    title:{
+
+    },
+    key:{
+
+    },
+    dataList:{
+
+    },
+    placeholder:{
+
+    },
+    slotsData:{
+      twoWay: true   //true表示在子组件里更改了值, 父组件也会同步更改
+    },
+    slotsKey:{
+
+    }
+  };
+  watch = {
+    slotsData:function (params) {
+      this.currentValue = this.slotsData[this.slotsKey].text;
+      this.$apply();
+    }
+  }
+  methods = {
+    select(value) {
+      this.isShow = false;
+      if(this.isScroll) {
+        return;
+      }
+      this.isSelect = true;
+      this.currentValue = value.text;
+      this.slotsData[this.slotsKey] = value;
+      this.filter(value.text);
+    },
+    input(e) {
+      if(this.oldval == e.detail.value) {
+        return;
+      }
+      this.oldval = e.detail.value;
+      this.isSelect = false;
+      this.filter(e.detail.value);
+    },
+    focus(e) {
+      this.$emit('hide');
+      if(this.matchList.length == 0&&this.currentValue === '') {
+        this.matchList = this.dataList[this.key];
+      }
+      this.filter(e.detail.value);
+      this.isShow = true;
+    },
+    blur(e) {
+      if(!this.isSelect) {
+        if(this.custom == 1) {
+          this.slotsData[this.slotsKey] = {
+            value:0,
+            text:e.detail.value
+          };
+        }else {
+          this.currentValue = '';
+          this.slotsData[this.slotsKey] = {};
+          this.matchList = this.dataList[this.key];
+          this.$apply();
+        }
+      }
+      if(!this.isScroll) {
+        this.isShow = false;
+      }
+    },
+    scroll() {
+      this.isScroll = true;
+      clearTimeout(this.timer);
+      this.timer=setTimeout(()=>{
+        this.isScroll = false;
+      },100)
+    }
+  }
+
+  //模糊匹配
+  filter(val) {
+    this.matchList = [];
+    for (let item of this.dataList[this.key]){
+      if(
+        item.text.toUpperCase().search(val.toUpperCase()) != -1 ||
+        String(item.spell).toUpperCase().search(val.toUpperCase()) != -1){
+          this.matchList.push(item);
+      }
+    }
+    this.$apply();
+  }
+}
+</script>
+
+
+<style lang="scss">
+  .autoComplete-component {
+    position: relative;
+    .result {
+      position: absolute;
+      width: 100%;
+      top: 90rpx;
+      z-index: 999;
+      background: #eee;
+      max-height: 240px;
+      .li {
+        font-size: 28rpx;
+        line-height: 90rpx;
+        text-align: center;
+        color: #2b2b2b;
+      }
+    }
+  }
+</style>
+
